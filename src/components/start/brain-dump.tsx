@@ -5,6 +5,8 @@ import { useState } from "react";
 import { useAppStore } from "@/lib/store/app-store";
 import { classifyInboxItem } from "@/lib/ai/classify";
 import { createId } from "@/lib/id";
+import { createClient } from "@/lib/supabase/client";
+import { insertInboxItem } from "@/lib/supabase/inbox";
 import { SparkIcon } from "@/components/icons";
 
 type Reveal =
@@ -27,14 +29,25 @@ export function BrainDump() {
 
     const { brandKey, suggestion } = await classifyInboxItem(text);
     setReveal({ status: "done", text, type: suggestion.type, brand: suggestion.brand, potential: suggestion.potential });
-    addInboxItem({
-      id: createId("i"),
-      kind: "idea",
-      brandKey,
-      text,
-      createdAt: new Date().toISOString().slice(0, 10),
-      suggestion,
-    });
+
+    try {
+      const supabase = createClient();
+      const saved = await insertInboxItem(supabase, { kind: "idea", brandKey, text, suggestion });
+      addInboxItem(saved);
+    } catch (err) {
+      // Speichern fehlgeschlagen (z.B. Netzwerk) -- Eintrag trotzdem lokal
+      // zeigen, statt den Gedanken kommentarlos zu verlieren. Persistiert
+      // dann erst beim nächsten erfolgreichen Schreibvorgang neu.
+      console.error("Konnte Inbox-Eintrag nicht speichern:", err);
+      addInboxItem({
+        id: createId("i"),
+        kind: "idea",
+        brandKey,
+        text,
+        createdAt: new Date().toISOString(),
+        suggestion,
+      });
+    }
     setSending(false);
   }
 

@@ -10,7 +10,6 @@ import {
 } from "react";
 
 import { PROJECTS } from "@/lib/data/projects";
-import { INITIAL_INBOX } from "@/lib/data/inbox";
 import type {
   BrandKey,
   Capacity,
@@ -55,24 +54,34 @@ type Action =
   | { type: "TOGGLE_AI_PANEL" }
   | { type: "ADD_AI_PANEL_MESSAGE"; message: ChatMessage };
 
-const initialState: AppState = {
-  dailyCheckDone: false,
-  capacity: "normal",
-  focusIndex: 0,
-  projects: PROJECTS,
-  workTab: "all",
-  inbox: INITIAL_INBOX,
-  contentBrand: "feelweb",
-  chatLogs: {},
-  aiPanelOpen: false,
-  aiPanelLog: [
-    {
-      id: "ai-panel-welcome",
-      who: "ai",
-      text: "Ich bin überall im Tool für dich da. Frag mich zu dem, was du gerade siehst.",
-    },
-  ],
-};
+/**
+ * `inbox` kommt seit Phase 1 nicht mehr aus lokalen Demo-Daten, sondern wird
+ * server-seitig aus Supabase geladen und von `(app)/layout.tsx` als
+ * `initialInbox`-Prop hereingereicht (siehe `AppStoreProvider` unten) — der
+ * erste reale Austauschpunkt aus dem Implementation Plan. Die übrigen
+ * Entitäten (Projekte, Content, Wissen, Rückblick) laufen noch auf
+ * `lib/data/*`, siehe docs/phase-0-result.md / phase-1-result.md.
+ */
+function createInitialState(initialInbox: InboxItem[]): AppState {
+  return {
+    dailyCheckDone: false,
+    capacity: "normal",
+    focusIndex: 0,
+    projects: PROJECTS,
+    workTab: "all",
+    inbox: initialInbox,
+    contentBrand: "feelweb",
+    chatLogs: {},
+    aiPanelOpen: false,
+    aiPanelLog: [
+      {
+        id: "ai-panel-welcome",
+        who: "ai",
+        text: "Ich bin überall im Tool für dich da. Frag mich zu dem, was du gerade siehst.",
+      },
+    ],
+  };
+}
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -145,8 +154,14 @@ interface AppContextValue extends AppState {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-export function AppStoreProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+export function AppStoreProvider({
+  children,
+  initialInbox,
+}: {
+  children: ReactNode;
+  initialInbox: InboxItem[];
+}) {
+  const [state, dispatch] = useReducer(reducer, initialInbox, createInitialState);
 
   const submitDayCheck = useCallback(
     (capacity: Capacity, focusIndex: number) =>

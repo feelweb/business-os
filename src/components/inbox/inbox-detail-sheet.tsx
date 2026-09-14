@@ -2,6 +2,8 @@
 
 import { useAppStore } from "@/lib/store/app-store";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
+import { archiveInboxItem } from "@/lib/supabase/inbox";
 import type { InboxItem } from "@/lib/types";
 
 export function InboxDetailSheet({
@@ -14,8 +16,14 @@ export function InboxDetailSheet({
   const { removeInboxItem } = useAppStore();
 
   function act() {
+    // Optimistisch: sofort aus der Liste, Archivierung läuft im Hintergrund
+    // nach (soft delete über archived_at, siehe lib/supabase/inbox.ts).
     removeInboxItem(item.id);
     onClose();
+    const supabase = createClient();
+    archiveInboxItem(supabase, item.id).catch((err) =>
+      console.error("Konnte Inbox-Eintrag nicht archivieren:", err)
+    );
   }
 
   return (

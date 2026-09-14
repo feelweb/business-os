@@ -9,7 +9,13 @@ import { AiDock } from "@/components/layout/ai-dock";
  * Die ambienten Gradient-Lichtflächen (`body::before/::after` im Prototyp)
  * laufen hier als fixe, dekorative Elemente hinter dem Inhalt.
  */
-export function Shell({ children }: { children: ReactNode }) {
+export function Shell({
+  children,
+  userEmail,
+}: {
+  children: ReactNode;
+  userEmail: string | null;
+}) {
   return (
     <div className="relative flex min-h-screen">
       <div
@@ -29,7 +35,7 @@ export function Shell({ children }: { children: ReactNode }) {
         }}
       />
       <div className="relative z-10 flex w-full">
-        <Sidebar />
+        <Sidebar userEmail={userEmail} />
         <main className="view-in min-w-0 flex-1 px-6 py-8 pb-24 md:px-11">
           <div className="mx-auto max-w-[1180px]">{children}</div>
         </main>

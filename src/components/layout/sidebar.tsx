@@ -8,8 +8,9 @@ import clsx from "clsx";
 import { NAV } from "@/lib/nav";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { useAppStore } from "@/lib/store/app-store";
+import { SignOutButton } from "@/components/layout/sign-out-button";
 
-export function Sidebar() {
+export function Sidebar({ userEmail }: { userEmail: string | null }) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const { inbox } = useAppStore();
@@ -57,7 +58,13 @@ export function Sidebar() {
       </div>
 
       <div className="mt-auto flex flex-col gap-2.5">
+        {!collapsed && userEmail && (
+          <div className="truncate px-1 text-[11px] font-semibold text-ink-3" title={userEmail}>
+            {userEmail}
+          </div>
+        )}
         <ThemeToggle collapsed={collapsed} />
+        <SignOutButton collapsed={collapsed} />
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}

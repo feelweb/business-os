@@ -1,5 +1,12 @@
 import type { InboxItem } from "@/lib/types";
 
+/**
+ * Seit Phase 1 nicht mehr die Datenquelle der laufenden App — die Inbox wird
+ * jetzt aus Supabase geladen (`lib/supabase/inbox.ts`, `(app)/layout.tsx`).
+ * Bleibt als Referenz stehen: gleiche Beispieldaten wie ursprünglich in
+ * Phase 0, brauchbar z.B. um ein frisches Supabase-Projekt manuell mit
+ * denselben Demo-Einträgen zu befüllen.
+ */
 export const INITIAL_INBOX: InboxItem[] = [
   {
     id: "i1",

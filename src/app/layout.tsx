@@ -3,8 +3,6 @@ import type { ReactNode } from "react";
 import { DM_Sans, Plus_Jakarta_Sans } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme-provider";
-import { AppStoreProvider } from "@/lib/store/app-store";
-import { Shell } from "@/components/layout/shell";
 
 import "./globals.css";
 
@@ -26,6 +24,11 @@ export const metadata: Metadata = {
   description: "Heikes persönliches Business- und Content-Betriebssystem.",
 };
 
+/**
+ * Bewusst minimal: nur Fonts + Theme. `AppStoreProvider`/`Shell` (Sidebar,
+ * AI-Dock) leben seit Phase 1 in `(app)/layout.tsx`, damit `/login` ohne
+ * App-Chrome auskommt — Routenschutz übernimmt `middleware.ts`.
+ */
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
@@ -35,9 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     >
       <body className="antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AppStoreProvider>
-            <Shell>{children}</Shell>
-          </AppStoreProvider>
+          {children}
         </ThemeProvider>
       </body>
     </html>

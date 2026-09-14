@@ -1,5 +1,12 @@
 import type { Project } from "@/lib/types";
 
+/**
+ * Seit Phase 1 nicht mehr die Datenquelle der laufenden App — Projekte
+ * kommen jetzt aus Supabase (`lib/supabase/projects.ts`, `(app)/layout.tsx`).
+ * Bleibt als Referenz stehen und ist die Grundlage für
+ * `supabase/seed_projects.sql` (dieselben Beispielprojekte als Startdaten
+ * in einem frischen Supabase-Projekt).
+ */
 export const PROJECTS: Project[] = [
   {
     id: "w1",

@@ -9,7 +9,6 @@ import {
   type ReactNode,
 } from "react";
 
-import { PROJECTS } from "@/lib/data/projects";
 import type {
   BrandKey,
   Capacity,
@@ -54,22 +53,27 @@ type Action =
   | { type: "TOGGLE_AI_PANEL" }
   | { type: "ADD_AI_PANEL_MESSAGE"; message: ChatMessage };
 
+interface InitialData {
+  inbox: InboxItem[];
+  projects: Project[];
+}
+
 /**
- * `inbox` kommt seit Phase 1 nicht mehr aus lokalen Demo-Daten, sondern wird
- * server-seitig aus Supabase geladen und von `(app)/layout.tsx` als
- * `initialInbox`-Prop hereingereicht (siehe `AppStoreProvider` unten) — der
- * erste reale Austauschpunkt aus dem Implementation Plan. Die übrigen
- * Entitäten (Projekte, Content, Wissen, Rückblick) laufen noch auf
- * `lib/data/*`, siehe docs/phase-0-result.md / phase-1-result.md.
+ * `inbox` und `projects` kommen seit Phase 1 nicht mehr aus lokalen
+ * Demo-Daten, sondern werden server-seitig aus Supabase geladen und von
+ * `(app)/layout.tsx` als Props hereingereicht (siehe `AppStoreProvider`
+ * unten) — die ersten realen Austauschpunkte aus dem Implementation Plan.
+ * Content, Wissen und Rückblick laufen noch auf `lib/data/*`, siehe
+ * docs/phase-0-result.md / phase-1-result.md.
  */
-function createInitialState(initialInbox: InboxItem[]): AppState {
+function createInitialState({ inbox, projects }: InitialData): AppState {
   return {
     dailyCheckDone: false,
     capacity: "normal",
     focusIndex: 0,
-    projects: PROJECTS,
+    projects,
     workTab: "all",
-    inbox: initialInbox,
+    inbox,
     contentBrand: "feelweb",
     chatLogs: {},
     aiPanelOpen: false,
@@ -157,11 +161,17 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppStoreProvider({
   children,
   initialInbox,
+  initialProjects,
 }: {
   children: ReactNode;
   initialInbox: InboxItem[];
+  initialProjects: Project[];
 }) {
-  const [state, dispatch] = useReducer(reducer, initialInbox, createInitialState);
+  const [state, dispatch] = useReducer(
+    reducer,
+    { inbox: initialInbox, projects: initialProjects },
+    createInitialState
+  );
 
   const submitDayCheck = useCallback(
     (capacity: Capacity, focusIndex: number) =>

@@ -7,6 +7,8 @@ import { useAppStore } from "@/lib/store/app-store";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { DotScale } from "@/components/ui/dot-scale";
 import { CheckIcon, ContentIcon, HomeIcon, SparkIcon, WorkIcon } from "@/components/icons";
+import { createClient } from "@/lib/supabase/client";
+import { setTaskDone } from "@/lib/supabase/projects";
 import type { Project } from "@/lib/types";
 
 const CAT_ICON: Record<Project["category"], ComponentType<SVGProps<SVGSVGElement>>> = {
@@ -22,6 +24,16 @@ export function ProjectCard({ project }: { project: Project }) {
   const total = project.tasks.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
   const Icon = CAT_ICON[project.category];
+
+  function onToggleTask(taskId: string, currentlyDone: boolean) {
+    // Optimistisch: UI schaltet sofort um, die Persistenz läuft im
+    // Hintergrund nach (gleiches Muster wie bei der Inbox).
+    toggleTask(project.id, taskId);
+    const supabase = createClient();
+    setTaskDone(supabase, taskId, !currentlyDone).catch((err) =>
+      console.error("Konnte Aufgabe nicht speichern:", err)
+    );
+  }
 
   return (
     <div className="flex flex-col overflow-hidden rounded-[18px] border border-border-soft bg-surface transition-shadow hover:shadow-[var(--shadow-md)]">
@@ -78,7 +90,7 @@ export function ProjectCard({ project }: { project: Project }) {
           <button
             key={task.id}
             type="button"
-            onClick={() => toggleTask(project.id, task.id)}
+            onClick={() => onToggleTask(task.id, task.done)}
             className="flex w-full items-center gap-2.5 rounded-[10px] px-2 py-2 text-left transition-colors hover:bg-surface-2"
           >
             <span

@@ -1,0 +1,1419 @@
+<title>Second Brain</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700&display=swap" rel="stylesheet">
+
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg: #ffffff;
+  --bg-soft: #f6f6f4;
+  --surface: #ffffff;
+  --surface-2: #f6f6f4;
+  --ink: #17181a;
+  --ink-2: #59595a;
+  --ink-3: #97979a;
+  --border: #e6e6e6;
+  --border-soft: #eeeeee;
+  --mint: #cdf5eb;
+  --sky: #7cc8ff;
+  --grad: linear-gradient(120deg, #cdf5eb 0%, #9fe0e0 45%, #7cc8ff 100%);
+  --grad-text: linear-gradient(120deg, #3a9c88 0%, #3f86bd 100%);
+  --grad-ink: #163a34;
+  --grad-glow: rgba(124,200,255,.35);
+  --good: #4f8d68;
+  --good-bg: #e9f3ec;
+  --warn: #b3812f;
+  --warn-bg: #faf1de;
+  --crit: #b25b52;
+  --crit-bg: #f8e9e6;
+  --shadow-sm: 0 1px 2px rgba(20,20,20,.05), 0 1px 1px rgba(20,20,20,.04);
+  --shadow-md: 0 8px 24px -8px rgba(20,20,20,.12), 0 2px 6px -2px rgba(20,20,20,.05);
+  --shadow-lg: 0 24px 60px -16px rgba(20,20,20,.20);
+  --radius: 18px;
+  --radius-sm: 12px;
+  --font-display: 'DM Sans', system-ui, sans-serif;
+  --font-body: 'Nunito Sans', system-ui, sans-serif;
+}
+/* This product commits to one visual world — white surfaces, near-black
+   ink and the RemindFuel gradient as the only accent — so it stays
+   single-theme by design rather than swapping in a dark palette. */
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:var(--font-display);margin:0;text-wrap:balance;color:var(--ink);}
+p{margin:0;}
+button{font-family:inherit;}
+::selection{background:#7cc8ff55;}
+.grad-text{
+  background:var(--grad-text);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.eyebrow{
+  font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+}
+.scroll-thin::-webkit-scrollbar{width:6px;height:6px;}
+.scroll-thin::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px;}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.001ms !important; transition-duration:.001ms !important;}
+}
+
+/* ============ SHELL ============ */
+/* Ambient, transparent gradient wash behind the whole product — fixed so
+   it stays put while content scrolls over it. */
+body::before, body::after{
+  content:""; position:fixed; border-radius:50%; filter:blur(95px); z-index:0; pointer-events:none;
+}
+body::before{ width:560px; height:560px; top:-200px; right:-160px;
+  background:radial-gradient(circle, rgba(205,245,235,.38), transparent 70%); }
+body::after{ width:480px; height:480px; bottom:-180px; left:120px;
+  background:radial-gradient(circle, rgba(124,200,255,.28), transparent 70%); }
+.app{display:flex; min-height:100vh; position:relative; z-index:1;}
+
+/* ---- sidebar ---- */
+.sidebar{
+  width:220px; flex:none;
+  padding:26px 16px 20px;
+  display:flex; flex-direction:column; gap:28px;
+  border-right:1px solid var(--border-soft);
+  position:sticky; top:0; height:100vh;
+  transition:width .25s ease, padding .25s ease;
+}
+.sidebar.collapsed{width:76px; padding-left:14px; padding-right:14px;}
+.brand-mark{display:flex; align-items:center; gap:10px; padding:0 6px;}
+.brand-dot{
+  width:30px;height:30px;border-radius:9px;flex:none;
+  background:var(--grad);
+  box-shadow:0 4px 14px -4px rgba(124,200,255,.55);
+}
+.brand-name{font-family:var(--font-display); font-weight:700; font-size:15.5px; white-space:nowrap; overflow:hidden;}
+.sidebar.collapsed .brand-name, .sidebar.collapsed .navlabel, .sidebar.collapsed .cap-name{display:none;}
+
+.navgroup{display:flex; flex-direction:column; gap:2px;}
+.navitem{
+  display:flex; align-items:center; gap:12px;
+  padding:9px 12px; border-radius:11px; cursor:pointer;
+  color:var(--ink-2); font-weight:600; font-size:14px;
+  transition:background .15s ease, color .15s ease;
+  white-space:nowrap; overflow:hidden;
+}
+.navitem svg{flex:none; width:18px;height:18px; opacity:.85;}
+.navitem:hover{background:var(--surface-2); color:var(--ink);}
+.navitem.active{background:var(--surface); color:var(--ink); box-shadow:var(--shadow-sm);}
+.navitem.active svg{opacity:1;}
+.navitem .dot-badge{
+  margin-left:auto; width:7px;height:7px;border-radius:50%; background:var(--grad); flex:none;
+}
+.sidebar.collapsed .dot-badge{display:none;}
+.sidebar.collapsed .navitem{justify-content:center; padding:10px;}
+
+.sidebar-foot{margin-top:auto; display:flex; flex-direction:column; gap:10px;}
+.cap-pill-row{display:flex; gap:5px; padding:4px; background:var(--surface-2); border-radius:11px;}
+.cap-btn{
+  flex:1; text-align:center; padding:6px 4px; border:none; background:transparent; border-radius:8px;
+  font-size:11.5px; font-weight:700; color:var(--ink-3); cursor:pointer; transition:.15s;
+}
+.cap-btn.active{background:var(--surface); color:var(--ink); box-shadow:var(--shadow-sm);}
+.collapse-btn{
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  border:1px solid var(--border-soft); background:var(--surface); border-radius:10px;
+  padding:8px; cursor:pointer; color:var(--ink-3); font-size:12px; font-weight:600;
+}
+.collapse-btn:hover{color:var(--ink);}
+
+/* ---- main ---- */
+.main{flex:1; min-width:0; padding:30px 44px 90px; max-width:1180px;}
+@media (max-width: 900px){ .main{padding:22px 18px 70px;} .sidebar{position:fixed; z-index:40; background:var(--bg);} }
+
+.view{display:none; animation:viewIn .5s cubic-bezier(.2,.8,.2,1);}
+.view.active{display:block;}
+@keyframes viewIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+/* ============ SHARED COMPONENTS ============ */
+.card{
+  background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius);
+  box-shadow:var(--shadow-sm);
+}
+.pill{
+  display:inline-flex; align-items:center; gap:6px; padding:4px 11px; border-radius:99px;
+  font-size:12px; font-weight:700; border:1px solid var(--border);
+}
+.pill.good{background:var(--good-bg); color:var(--good); border-color:transparent;}
+.pill.warn{background:var(--warn-bg); color:var(--warn); border-color:transparent;}
+.pill.crit{background:var(--crit-bg); color:var(--crit); border-color:transparent;}
+.pill.neutral{background:var(--surface-2); color:var(--ink-2); border-color:transparent;}
+.pill.grad{background:var(--grad); color:var(--grad-ink); border-color:transparent;}
+
+.btn{
+  display:inline-flex; align-items:center; gap:8px; border-radius:11px; padding:10px 16px;
+  font-weight:700; font-size:13.5px; cursor:pointer; border:1px solid var(--border); background:var(--surface);
+  color:var(--ink); transition:.15s ease;
+}
+.btn:hover{border-color:var(--ink-3); transform:translateY(-1px);}
+.btn.primary{background:var(--grad); color:var(--grad-ink); border-color:transparent; font-weight:800;}
+.btn.primary:hover{filter:brightness(1.04);}
+.btn.ghost{border-color:transparent; background:transparent; padding:8px 10px;}
+.btn.ghost:hover{background:var(--surface-2); transform:none;}
+.btn.sm{padding:7px 12px; font-size:12.5px; border-radius:9px;}
+
+.glow-ring{position:relative; isolation:isolate;}
+.glow-ring::before{
+  content:""; position:absolute; inset:-1.5px; border-radius:inherit; padding:1.5px;
+  background:var(--grad);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+  opacity:.9; z-index:-1;
+}
+
+/* ============ HOME ============ */
+.home-hero{padding:6px 2px 30px;}
+.home-hero h1{font-size:clamp(30px,3.6vw,44px); font-weight:700; letter-spacing:-.01em;}
+.home-hero .sub{margin-top:8px; font-size:16.5px; color:var(--ink-2); max-width:46ch;}
+
+.section-head{display:flex; align-items:baseline; justify-content:space-between; margin:44px 0 16px;}
+.section-head h2{font-size:19px; font-weight:700;}
+.section-head .hint{font-size:12.5px; color:var(--ink-3);}
+
+/* ---- Tagescheck summary strip (replaces inline capacity + focus pickers) ---- */
+.daycheck-summary{
+  display:flex; align-items:center; gap:22px; margin-top:24px; padding:16px 22px; border-radius:18px;
+  background:
+    radial-gradient(120% 160% at 0% 0%, rgba(205,245,235,.5), transparent 60%),
+    radial-gradient(120% 160% at 100% 100%, rgba(124,200,255,.4), transparent 60%),
+    var(--surface);
+  border:1px solid var(--border-soft); flex-wrap:wrap;
+}
+.dcs-item{display:flex; flex-direction:column; gap:3px;}
+.dcs-item.grow{flex:1; min-width:200px;}
+.dcs-k{font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3);}
+.dcs-v{font-size:15px; font-weight:700; font-family:var(--font-display);}
+.dcs-cap{display:inline-flex; align-items:center; gap:6px;}
+.dcs-cap .cdot{width:8px;height:8px;border-radius:50%;}
+.dcs-divider{width:1px; height:32px; background:var(--border);}
+
+/* ---- Quick-glance tiles: was ansteht / wo du stehst / was offen ist / größtes Potential ---- */
+.glance-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:16px;}
+@media (max-width:900px){.glance-grid{grid-template-columns:1fr 1fr;}}
+.glance-tile{
+  border-radius:16px; padding:17px 18px; border:1px solid var(--border-soft); background:var(--surface);
+  display:flex; flex-direction:column; gap:8px; min-height:104px; position:relative; overflow:hidden;
+}
+.glance-tile .gk{font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); display:flex; align-items:center; gap:6px;}
+.glance-tile .gk svg{width:13px; height:13px; flex:none;}
+.week-tile .wt-k svg{width:13px; height:13px; flex:none;}
+.glance-tile .gv{font-size:14.5px; font-weight:700; line-height:1.4;}
+.glance-tile .gs{font-size:12px; color:var(--ink-2);}
+.glance-tile.potential{
+  background:
+    radial-gradient(140% 160% at 100% 0%, rgba(205,245,235,.55), transparent 60%),
+    radial-gradient(120% 140% at 0% 100%, rgba(124,200,255,.4), transparent 60%),
+    var(--surface);
+  border-color:transparent;
+}
+.glance-tile.potential .gk{color:var(--grad-ink);}
+
+/* ---- Tagescheck modal ---- */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(20,18,16,.32); backdrop-filter:blur(3px);
+  display:none; align-items:center; justify-content:center; z-index:80; padding:20px;
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  width:min(520px,100%); max-height:88vh; overflow-y:auto; background:var(--surface); border-radius:24px;
+  padding:34px 32px; box-shadow:var(--shadow-lg); position:relative; animation:modalIn .35s cubic-bezier(.2,.8,.2,1);
+  border:1px solid var(--border-soft);
+}
+.modal::before{
+  content:""; position:absolute; left:-70px; top:-90px; width:260px; height:260px; border-radius:50%;
+  background:var(--grad); filter:blur(60px); opacity:.35; z-index:0; pointer-events:none;
+}
+.modal > *{position:relative; z-index:1;}
+@keyframes modalIn{from{opacity:0; transform:translateY(10px) scale(.98);} to{opacity:1; transform:none;}}
+.modal h2{font-size:24px; margin-top:6px;}
+.modal .sub{margin-top:6px; font-size:14px; color:var(--ink-2);}
+.dc-block{margin-top:26px;}
+.dc-label{font-size:12.5px; font-weight:700; color:var(--ink-2); margin-bottom:10px;}
+.cap-select{display:flex; gap:6px; background:var(--surface-2); padding:4px; border-radius:12px;}
+.cap-select.large{padding:5px;}
+.cap-opt{flex:1; text-align:center; padding:10px 16px; border-radius:9px; font-size:13.5px; font-weight:700; color:var(--ink-3); cursor:pointer; border:none; background:transparent;}
+.cap-opt.active{background:var(--surface); color:var(--ink); box-shadow:var(--shadow-sm);}
+.dc-focus-list{display:flex; flex-direction:column; gap:8px;}
+.dc-focus-row{
+  display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border-radius:14px; cursor:pointer;
+  border:1px solid var(--border-soft); background:var(--surface); transition:.15s;
+}
+.dc-focus-row:hover{border-color:var(--ink-3);}
+.dc-focus-row.selected{border-color:transparent; background:
+    radial-gradient(160% 200% at 0% 0%, rgba(205,245,235,.55), transparent 65%),
+    radial-gradient(140% 180% at 100% 100%, rgba(124,200,255,.4), transparent 65%),
+    var(--surface); box-shadow:0 0 0 1.5px rgba(124,200,255,.5) inset;}
+.dc-radio{width:18px; height:18px; border-radius:50%; border:1.5px solid var(--border); flex:none; margin-top:2px; position:relative;}
+.dc-focus-row.selected .dc-radio{border-color:var(--grad-ink);}
+.dc-focus-row.selected .dc-radio::after{content:""; position:absolute; inset:3px; border-radius:50%; background:var(--grad);}
+.dc-focus-row .cat{font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3);}
+.dc-focus-row .ti{font-size:14.5px; font-weight:700; margin-top:3px;}
+.dc-focus-row .wy{font-size:12.5px; color:var(--ink-2); margin-top:3px; line-height:1.5;}
+.dc-submit{width:100%; justify-content:center; margin-top:26px; padding:14px; font-size:14.5px;}
+
+/* ---- "Diese Woche" — redesigned to be scannable at a glance ---- */
+.week-hero{
+  border-radius:20px; padding:22px 26px; display:flex; align-items:center; justify-content:space-between; gap:18px;
+  flex-wrap:wrap; background:
+    radial-gradient(140% 180% at 0% 0%, rgba(205,245,235,.55), transparent 60%),
+    radial-gradient(120% 160% at 100% 100%, rgba(124,200,255,.4), transparent 60%),
+    var(--surface);
+  border:1px solid var(--border-soft);
+}
+.week-hero .wh-num{font-family:var(--font-display); font-weight:800; font-size:clamp(30px,4vw,42px); line-height:1;}
+.week-hero .wh-lbl{font-size:13px; color:var(--ink-2); margin-top:6px; font-weight:600;}
+.week-tiles{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:12px;}
+@media (max-width:900px){.week-tiles{grid-template-columns:1fr 1fr;}}
+.week-tile{
+  border-radius:16px; padding:17px 18px; border:1px solid var(--border-soft); background:var(--surface);
+  position:relative; min-height:96px;
+}
+.week-tile.is-focus{border-color:transparent; box-shadow:0 0 0 1.5px rgba(124,200,255,.55) inset;}
+.week-tile .wt-badge{
+  position:absolute; top:12px; right:12px; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+  background:var(--grad); color:var(--grad-ink); padding:3px 8px; border-radius:99px;
+}
+.week-tile .wt-k{font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); display:flex; align-items:center; gap:7px;}
+.week-tile .wt-icon{width:8px;height:8px;border-radius:50%; flex:none;}
+.week-tile .wt-v{margin-top:9px; font-size:14.5px; font-weight:700; line-height:1.35;}
+.ring-row{display:flex; gap:14px; align-items:center;}
+.ring{position:relative; width:46px; height:46px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;}
+.ring .ring-pct{font-size:10.5px; font-weight:800; font-family:var(--font-display);}
+.ring-label{font-size:10.5px; color:var(--ink-3); font-weight:700; margin-top:4px; text-align:center;}
+.ring-col{display:flex; flex-direction:column; align-items:center;}
+.ring-inner{width:34px; height:34px; border-radius:50%; background:var(--surface); display:flex; align-items:center; justify-content:center;}
+
+.attn-list{display:flex; flex-direction:column; gap:10px;}
+.attn-item{
+  display:flex; gap:12px; align-items:flex-start; padding:15px 18px; border-radius:14px;
+  border:1px solid var(--border-soft); background:var(--surface-2);
+}
+.attn-item svg{flex:none; width:18px; height:18px; margin-top:2px; color:var(--warn);}
+.attn-item.crit svg{color:var(--crit);}
+.attn-item .t{font-size:14px; font-weight:600; line-height:1.45;}
+.attn-item .t b{font-weight:800;}
+
+.braindump-wrap{margin-top:50px;}
+.braindump-box{
+  border-radius:22px; padding:6px; background:var(--surface); border:1px solid var(--border-soft); box-shadow:var(--shadow-md);
+  position:relative;
+}
+.braindump-inner{display:flex; align-items:center; gap:12px; padding:12px 8px 12px 18px;}
+.braindump-inner svg{flex:none; width:19px; height:19px; color:var(--ink-3);}
+#brainInput{
+  flex:1; border:none; outline:none; background:transparent; font-size:16.5px; font-family:var(--font-body);
+  color:var(--ink); padding:8px 0;
+}
+#brainInput::placeholder{color:var(--ink-3);}
+.braindump-send{
+  border:none; border-radius:14px; padding:11px 18px; background:var(--grad); color:var(--grad-ink); font-weight:800;
+  font-size:13.5px; cursor:pointer; flex:none;
+}
+.braindump-send:disabled{opacity:.35; cursor:default;}
+.braindump-hint{text-align:center; margin-top:10px; font-size:12px; color:var(--ink-3);}
+
+.ai-reveal{
+  margin-top:14px; border-radius:18px; padding:18px 20px; background:var(--surface-2); border:1px solid var(--border-soft);
+  animation:revealIn .4s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes revealIn{from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:none;}}
+.ai-reveal-head{display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:var(--ink-2);}
+.ai-dotgrad{width:8px;height:8px;border-radius:50%; background:var(--grad); flex:none;}
+.ai-tags{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
+.ai-tag{font-size:12.5px; font-weight:600; padding:5px 11px; border-radius:99px; background:var(--surface); border:1px solid var(--border);}
+
+/* ============ INBOX ============ */
+.inbox-list{display:flex; flex-direction:column; gap:10px; margin-top:6px;}
+.inbox-item{
+  display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:14px; cursor:pointer;
+  border:1px solid var(--border-soft); background:var(--surface); transition:.15s;
+}
+.inbox-item:hover{border-color:var(--ink-3); transform:translateX(2px);}
+.inbox-item .kind-dot{width:9px;height:9px;border-radius:50%; flex:none;}
+.inbox-item .txt{flex:1; font-size:14.5px; font-weight:600;}
+.inbox-item .meta{font-size:12px; color:var(--ink-3); flex:none;}
+
+.overlay{
+  position:fixed; inset:0; background:rgba(30,24,17,.38); backdrop-filter:blur(2px);
+  display:none; align-items:center; justify-content:flex-end; z-index:60;
+}
+.overlay.open{display:flex;}
+.sheet{
+  width:min(480px,92vw); height:100%; background:var(--surface); box-shadow:var(--shadow-lg);
+  padding:30px 30px 30px; overflow-y:auto; animation:sheetIn .35s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes sheetIn{from{transform:translateX(24px); opacity:0;} to{transform:none; opacity:1;}}
+.sheet-close{float:right; cursor:pointer; color:var(--ink-3); border:none; background:none; font-size:18px;}
+.sheet h3{font-size:15px; color:var(--ink-3); font-weight:700; margin-bottom:14px;}
+.sheet .quote{font-size:19px; font-weight:600; line-height:1.5; margin:10px 0 22px; font-family:var(--font-display);}
+.understand-box{
+  border-radius:16px; padding:18px 20px; background:var(--surface-2); border:1px solid var(--border-soft);
+}
+.understand-box .ai-reveal-head{margin-bottom:12px;}
+.ufact{display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--border-soft); font-size:13.5px;}
+.ufact:first-of-type{border-top:none;}
+.ufact .k{color:var(--ink-3); font-weight:600;}
+.ufact .v{font-weight:700; text-align:right;}
+.sheet-actions{display:flex; gap:8px; margin-top:22px; flex-wrap:wrap;}
+
+/* ============ WORK ============ */
+.tabbar{display:flex; gap:6px; background:var(--surface-2); padding:5px; border-radius:13px; width:fit-content; margin-bottom:24px; flex-wrap:wrap;}
+.tabbar button{border:none; background:transparent; padding:8px 15px; border-radius:9px; font-size:13px; font-weight:700; color:var(--ink-3); cursor:pointer;}
+.tabbar button.active{background:var(--surface); color:var(--ink); box-shadow:var(--shadow-sm);}
+.tabbar button{display:inline-flex; align-items:center; gap:6px;}
+.tabbar button svg{width:12px; height:12px; opacity:.55;}
+
+.work-list{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+@media (max-width:980px){.work-list{grid-template-columns:1fr;}}
+.work-card{
+  border:1px solid var(--border-soft); background:var(--surface); border-radius:var(--radius); overflow:hidden;
+  transition:.15s; display:flex; flex-direction:column;
+}
+.work-card:hover{box-shadow:var(--shadow-md);}
+.wc-head{display:flex; gap:14px; padding:20px 22px 0;}
+.wc-tile{
+  width:50px; height:50px; border-radius:13px; flex:none; position:relative; overflow:hidden;
+  display:flex; align-items:center; justify-content:center; color:var(--grad-ink);
+  background:
+    radial-gradient(130% 150% at 15% 10%, rgba(205,245,235,.65), transparent 55%),
+    radial-gradient(110% 130% at 100% 100%, rgba(124,200,255,.5), transparent 55%),
+    var(--surface-2);
+}
+.wc-tile svg{width:20px; height:20px;}
+.wc-tile.photo{
+  color:#fff;
+  background:
+    radial-gradient(130% 150% at 15% 10%, rgba(205,245,235,.5), transparent 55%),
+    radial-gradient(110% 130% at 100% 100%, rgba(124,200,255,.5), transparent 55%),
+    linear-gradient(160deg,#171b1c,#0c0e0f);
+}
+.wc-tile.photo::after{content:""; position:absolute; inset:0; background:rgba(8,10,10,.25);}
+.wc-body{flex:1; min-width:0;}
+.wc-toprow{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+.wc-title{font-family:var(--font-display); font-weight:700; font-size:16px;}
+.wc-sub{font-size:12px; color:var(--ink-3); margin-top:3px;}
+.wc-badges{display:flex; flex-wrap:wrap; gap:7px; margin-top:11px;}
+.metabit{font-size:11.5px; font-weight:600; color:var(--ink-2); background:var(--surface-2); border-radius:8px; padding:5px 9px; display:flex; gap:5px; align-items:center;}
+.metabit b{font-weight:800; color:var(--ink);}
+.metabit-visual{font-size:11.5px; font-weight:700; color:var(--ink-2); background:var(--surface-2); border-radius:8px; padding:5px 9px; display:flex; gap:7px; align-items:center;}
+.dot-scale{display:inline-flex; gap:3px; align-items:center;}
+.dot-scale .d{width:6px; height:6px; border-radius:50%; background:var(--border);}
+.dot-scale .d.on{background:var(--grad-ink);}
+
+.wc-progress-wrap{padding:16px 22px 0;}
+.wc-progress-track{height:6px; border-radius:99px; background:var(--surface-2); overflow:hidden;}
+.wc-progress-fill{height:100%; border-radius:99px; background:var(--grad); transition:width .3s ease;}
+.wc-progress-label{margin-top:7px; font-size:11.5px; color:var(--ink-3); font-weight:600;}
+
+.wc-tasks{padding:8px 14px 14px; margin-top:8px;}
+.task-row{display:flex; align-items:center; gap:11px; padding:8px 8px; border-radius:10px; cursor:pointer; transition:.12s;}
+.task-row:hover{background:var(--surface-2);}
+.task-check{width:19px; height:19px; border-radius:6px; border:1.5px solid var(--border); flex:none; display:flex; align-items:center; justify-content:center; transition:.15s;}
+.task-row.done .task-check{background:var(--grad); border-color:transparent;}
+.task-check svg{width:11px; height:11px; opacity:0; transition:.15s; color:var(--grad-ink);}
+.task-row.done .task-check svg{opacity:1;}
+.task-text{font-size:13px; font-weight:600; color:var(--ink);}
+.task-row.done .task-text{color:var(--ink-3); text-decoration:line-through;}
+
+.wc-client-strip{margin:4px 22px 20px; padding:12px 14px; border-radius:12px; background:var(--surface-2); font-size:12px; color:var(--ink-2); display:flex; flex-wrap:wrap; gap:6px 16px;}
+.wc-client-strip b{color:var(--ink);}
+
+/* ============ CONTENT ============ */
+.brand-tabs{display:flex; gap:10px; margin-bottom:26px; flex-wrap:wrap;}
+.brand-tab{
+  padding:10px 18px; border-radius:13px; cursor:pointer; font-weight:700; font-size:13.5px;
+  border:1px solid var(--border-soft); background:var(--surface); color:var(--ink-2); display:flex; align-items:center; gap:8px;
+}
+.brand-tab .sw{width:9px;height:9px;border-radius:50%;}
+.brand-tab.active{border-color:var(--ink); color:var(--ink); background:var(--surface); box-shadow:var(--shadow-sm);}
+
+.status-lanes{display:grid; grid-template-columns:repeat(5,1fr); gap:12px;}
+@media (max-width:1000px){.status-lanes{grid-template-columns:1fr 1fr;}}
+.lane-head{font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; display:flex; justify-content:space-between;}
+.lane{display:flex; flex-direction:column; gap:9px; min-height:60px;}
+.content-card{
+  border:1px solid var(--border-soft); background:var(--surface); border-radius:13px; padding:13px 14px; cursor:pointer; transition:.15s;
+}
+.content-card:hover{transform:translateY(-2px); box-shadow:var(--shadow-md);}
+.content-card .t{font-size:13.5px; font-weight:700; line-height:1.4;}
+.content-card .m{margin-top:8px; font-size:11.5px; color:var(--ink-3);}
+
+/* content workspace */
+.workspace{display:none;}
+.workspace.active{display:block;}
+.ws-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;}
+.ws-split{display:grid; grid-template-columns:63% 1fr; gap:0; border:1px solid var(--border-soft); border-radius:var(--radius); overflow:hidden; min-height:560px; background:var(--surface);}
+@media (max-width:940px){.ws-split{grid-template-columns:1fr;}}
+.ws-doc{padding:30px 32px; border-right:1px solid var(--border-soft);}
+.ws-doc .doc-title{font-family:var(--font-display); font-weight:700; font-size:22px; margin-bottom:16px;}
+.ws-doc .doc-body{font-size:16px; line-height:1.75; outline:none; min-height:300px;}
+.ws-doc .doc-body::selection{background:#7cc8ff44;}
+.ws-actions{display:flex; gap:8px; margin-top:24px; flex-wrap:wrap; border-top:1px solid var(--border-soft); padding-top:18px;}
+
+.ws-ai{background:var(--surface-2); display:flex; flex-direction:column;}
+.ws-ai-head{padding:18px 20px; border-bottom:1px solid var(--border-soft); display:flex; align-items:center; gap:9px; font-weight:700; font-size:13.5px;}
+.ws-chat{flex:1; padding:18px 20px; display:flex; flex-direction:column; gap:14px; overflow-y:auto; max-height:420px;}
+.msg{font-size:13.5px; line-height:1.55; max-width:92%;}
+.msg.ai{color:var(--ink);}
+.msg.user{align-self:flex-end; background:var(--surface); border:1px solid var(--border-soft); padding:10px 13px; border-radius:12px 12px 3px 12px; color:var(--ink);}
+.msg.ai .bubble{background:transparent;}
+.msg .typing{display:inline-flex; gap:4px;}
+.msg .typing span{width:5px;height:5px;border-radius:50%; background:var(--ink-3); animation:tp 1s infinite ease-in-out;}
+.msg .typing span:nth-child(2){animation-delay:.15s;} .msg .typing span:nth-child(3){animation-delay:.3s;}
+@keyframes tp{0%,80%,100%{opacity:.25;}40%{opacity:1;}}
+.ws-chat-input{display:flex; gap:8px; padding:14px 16px; border-top:1px solid var(--border-soft);}
+.ws-chat-input input{flex:1; border:1px solid var(--border); border-radius:11px; padding:10px 12px; font-size:13px; font-family:inherit; background:var(--surface);}
+.ws-chat-input button{border:none; border-radius:11px; background:var(--grad); color:var(--grad-ink); padding:0 14px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+.ws-chat-input button svg{width:16px; height:16px;}
+.selection-popover{
+  position:absolute; display:none; background:var(--surface); color:var(--ink); padding:6px; border-radius:12px; gap:4px;
+  box-shadow:var(--shadow-lg); border:1px solid var(--border); z-index:20;
+}
+.selection-popover button{background:transparent; border:none; color:var(--ink); font-size:12px; font-weight:700; padding:6px 10px; border-radius:7px; cursor:pointer;}
+.selection-popover button:hover{background:var(--surface-2);}
+
+/* ============ BRAIN ============ */
+.brand-detail-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-top:22px;}
+@media (max-width:820px){.brand-detail-grid{grid-template-columns:1fr;}}
+.bd-card{border:1px solid var(--border-soft); background:var(--surface); border-radius:16px; padding:18px 20px;}
+.bd-card .k{font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-3); margin-bottom:8px;}
+.bd-card .v{font-size:14px; line-height:1.6; color:var(--ink-2);}
+
+.learned-list{display:flex; flex-direction:column; gap:12px;}
+.learned-item{border:1px solid var(--border-soft); background:var(--surface); border-radius:16px; padding:18px 20px;}
+.li-top{display:flex; justify-content:space-between; gap:14px; align-items:flex-start;}
+.li-text{font-size:14.5px; font-weight:600; line-height:1.55; max-width:60ch;}
+.why-box{margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft); display:none; font-size:13px; color:var(--ink-2);}
+.why-box.open{display:block;}
+.why-src{padding:8px 0; display:flex; gap:8px;}
+.why-toggle{background:none;border:none;color:var(--ink-3); font-weight:700; font-size:12.5px; cursor:pointer; margin-top:12px; padding:0; display:inline-flex; align-items:center; gap:4px;}
+.why-toggle svg{width:13px; height:13px;}
+
+/* ============ REVIEW ============ */
+.review-hero{padding:30px 0 10px; text-align:left;}
+.review-hero .eyebrow{color:var(--grad-ink);}
+.review-hero h1{font-size:clamp(34px,5vw,58px); font-weight:800; letter-spacing:-.015em; margin-top:8px;}
+.review-hero h1 span{display:block;}
+.big-nums{display:grid; grid-template-columns:repeat(5,1fr); gap:0; margin:34px 0 46px; border-top:1px solid var(--border-soft); border-bottom:1px solid var(--border-soft);}
+@media (max-width:900px){.big-nums{grid-template-columns:1fr 1fr;}}
+.bn-cell{padding:24px 20px 24px 0; border-right:1px solid var(--border-soft);}
+.bn-cell:last-child{border-right:none;}
+.bn-cell .num{font-family:var(--font-display); font-weight:800; font-size:clamp(24px,2.6vw,34px); font-variant-numeric:tabular-nums;}
+.bn-cell .lbl{margin-top:6px; font-size:12px; color:var(--ink-3); font-weight:600;}
+
+.rv-section{padding:44px 0; border-top:1px solid var(--border-soft);}
+.rv-section h2{font-size:24px; font-weight:800; margin-bottom:18px;}
+.rv-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;}
+@media (max-width:900px){.rv-grid{grid-template-columns:1fr;}}
+.rv-card{border-radius:16px; padding:18px 20px; background:var(--surface-2); border:1px solid var(--border-soft); font-size:14px; line-height:1.6; color:var(--ink-2);}
+.rv-card b{color:var(--ink); font-weight:700;}
+
+.timeline{display:flex; flex-direction:column; margin-top:6px;}
+.tl-item{display:grid; grid-template-columns:90px 20px 1fr; gap:0;}
+.tl-date{font-size:12.5px; font-weight:700; color:var(--ink-3); padding:14px 0;}
+.tl-rail{display:flex; flex-direction:column; align-items:center;}
+.tl-dot{width:9px;height:9px;border-radius:50%; background:var(--grad); margin-top:18px; flex:none;}
+.tl-line{width:1px; flex:1; background:var(--border);}
+.tl-content{padding:12px 0 12px 18px; font-size:14px; color:var(--ink-2);}
+.tl-content b{color:var(--ink); font-weight:700;}
+
+/* Atmospheric "photo" panel: a generated color backdrop under a dark
+   overlay, standing in for a real photograph — the only place in the
+   product that goes dark, and it never uses flat brown/black alone. */
+.glowpanel{
+  border-radius:22px; padding:30px 32px; position:relative; overflow:hidden;
+  background:
+    radial-gradient(130% 160% at 10% -10%, rgba(205,245,235,.55), transparent 55%),
+    radial-gradient(110% 140% at 105% 115%, rgba(124,200,255,.55), transparent 55%),
+    linear-gradient(160deg, #15191a 0%, #0c0e0f 100%);
+  color:#f3f5f4;
+}
+.glowpanel::after{
+  content:""; position:absolute; inset:0; background:rgba(9,11,11,.32);
+}
+.glowpanel > *{position:relative; z-index:1;}
+.glowpanel p{color:rgba(243,245,244,.82);}
+.glowpanel b{color:#fff;}
+.glowpanel .lock-icon{display:inline-flex; width:30px; height:30px; color:#fff; opacity:.9;}
+.glowpanel .lock-icon svg{width:30px; height:30px;}
+
+/* ============ FLOATING AI DOCK ============ */
+.ai-fab{
+  position:fixed; right:26px; bottom:26px; z-index:70;
+  width:56px; height:56px; border-radius:50%; cursor:pointer; border:none;
+  background:var(--surface); box-shadow:var(--shadow-lg);
+  display:flex; align-items:center; justify-content:center;
+}
+.ai-fab .core{width:26px;height:26px;border-radius:50%; background:var(--grad); animation:pulse 3s infinite ease-in-out;}
+@keyframes pulse{0%,100%{transform:scale(1); opacity:1;}50%{transform:scale(1.12); opacity:.85;}}
+.ai-panel{
+  position:fixed; right:26px; bottom:94px; z-index:70; width:340px; max-height:60vh;
+  background:var(--surface); border:1px solid var(--border-soft); border-radius:20px; box-shadow:var(--shadow-lg);
+  display:none; flex-direction:column; overflow:hidden;
+}
+.ai-panel.open{display:flex; animation:sheetIn .3s ease;}
+.ai-panel-head{padding:15px 18px; border-bottom:1px solid var(--border-soft); font-weight:700; font-size:13px; display:flex; align-items:center; gap:8px; color:var(--ink-2);}
+.ai-panel-body{padding:16px 18px; display:flex; flex-direction:column; gap:12px; overflow-y:auto; flex:1;}
+.ai-panel-input{display:flex; gap:8px; padding:12px 14px; border-top:1px solid var(--border-soft);}
+.ai-panel-input input{flex:1; border:1px solid var(--border); border-radius:10px; padding:9px 11px; font-size:12.5px; font-family:inherit; background:var(--surface-2);}
+.ai-panel-input button{border:none; border-radius:10px; background:var(--grad); color:var(--grad-ink); padding:0 12px; font-weight:800; cursor:pointer; font-size:12px;}
+</style>
+
+<div class="app">
+  <nav class="sidebar" id="sidebar">
+    <div class="brand-mark">
+      <div class="brand-dot"></div>
+      <div class="brand-name">Second Brain</div>
+    </div>
+    <div class="navgroup" id="navgroup"></div>
+    <div class="sidebar-foot">
+      <div class="collapse-btn" id="collapseBtn">⟨⟩ <span class="navlabel">Einklappen</span></div>
+    </div>
+  </nav>
+
+  <main class="main" id="main"></main>
+</div>
+
+<div class="overlay" id="overlay"><div class="sheet" id="sheet"></div></div>
+
+<button class="ai-fab" id="aiFab" title="KI fragen"><div class="core"></div></button>
+<div class="ai-panel" id="aiPanel">
+  <div class="ai-panel-head"><span class="ai-dotgrad"></span> KI-Assistent · <span id="aiContextLabel">Start</span></div>
+  <div class="ai-panel-body scroll-thin" id="aiPanelBody"></div>
+  <div class="ai-panel-input">
+    <input id="aiPanelInput" placeholder="Frag mich etwas…" />
+    <button id="aiPanelSend">→</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ICONS
+============================================================ */
+const ICN = {
+  home:`<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 10 3l7 6.5"/><path d="M5 8.5V17h10V8.5"/><path d="M8 17v-5h4v5"/></svg>`,
+  inbox:`<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11h3.8l1 2h3.4l1-2h3.8"/><path d="M4 11 5.3 4.8A1 1 0 0 1 6.3 4h7.4a1 1 0 0 1 1 .8L16 11v4.2a.8.8 0 0 1-.8.8H4.8a.8.8 0 0 1-.8-.8Z"/></svg>`,
+  work:`<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="14" height="9" rx="1.6"/><path d="M7 7V5.6A1.6 1.6 0 0 1 8.6 4h2.8A1.6 1.6 0 0 1 13 5.6V7"/><path d="M3 11h14"/></svg>`,
+  content:`<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 17 6.7 10 10.3 3 6.7 10 3Z"/><path d="m3 10.4 7 3.6 7-3.6"/><path d="m3 13.9 7 3.6 7-3.6"/></svg>`,
+  brain:`<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6.5" r="2.1"/><circle cx="14" cy="6.5" r="2.1"/><circle cx="10" cy="13" r="2.1"/><path d="M6 8.6v1a2 2 0 0 0 2 2h.2M14 8.6v1a2 2 0 0 0-2 2h-.2M6.9 5.1h6.2"/></svg>`,
+  review:`<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16V9M10 16V4M16 16v-6.5"/><path d="M3 16h14"/></svg>`,
+  spark:`<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v3M10 14v3M3 10h3M14 10h3M5.3 5.3l2 2M12.7 12.7l2 2M5.3 14.7l2-2M12.7 7.3l2-2"/></svg>`,
+  alert:`<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.3"/><path d="M10 6.5v4M10 13.2v.1"/></svg>`,
+  send:`<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h13M11 5l5 5-5 5"/></svg>`,
+  chevr:`<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l6 6-6 6"/></svg>`,
+  lock:`<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9"/></svg>`,
+  check:`<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10.5l3.5 3.5 7.5-8"/></svg>`,
+};
+
+/* ============================================================
+   DEMO DATA
+============================================================ */
+const BRANDS = {
+  feelweb:   { name:'feelweb',    color:'#7cc8ff' },
+  lodora:    { name:'Lodora',     color:'#c9a6e0' },
+  remindfuel:{ name:'RemindFuel', color:'#7fae8e' },
+};
+
+const FOCUS = [
+  { cat:'Wachstum',    title:'Website Content Planner weiterentwickeln', why:'Du hast das Konzept seit 4 Tagen liegen lassen – der Schwung ist noch da, und es bringt dich näher an ein neues Mini-Produkt.', lead:true },
+  { cat:'Umsatz',      title:'Kundenprojekt Peter fertigstellen', why:'Deadline in 3 Tagen, nur noch Feinschliff nötig.' },
+  { cat:'Sichtbarkeit',title:'RemindFuel Reel fertigstellen', why:'Der Hook steht schon – nur der Schnitt fehlt noch.' },
+];
+
+const WEEK = {
+  haupt:'Website Content Planner', umsatz:'Kundenprojekt Peter', wachstum:'Kickstart your Website Kurs',
+  deadline:'Fr, 18. Sep — Kundenprojekt Peter', deadlineDays:3, deadlineWhat:'Kundenprojekt Peter', deadlineDate:'Fr, 18. Sep',
+  content:{ feelweb:.4, lodora:.15, remindfuel:.7 }
+};
+
+const GLANCE = {
+  ansteht:  { value:'Kundenprojekt Peter', sub:'Deadline in 3 Tagen — Fr, 18. Sep' },
+  status:   { value:'1 von 9 Beiträgen live', sub:'Content-Fortschritt diese Woche, über alle Marken' },
+  offen:    { value:'5 Inbox-Einträge · 8 Ideen', sub:'Noch nicht eingeordnet oder umgesetzt' },
+  potential:{ value:'RemindFuel Reel fertigstellen', sub:'Hook steht schon — nur der Schnitt fehlt noch' },
+};
+
+const ATTENTION = [
+  { level:'crit', text:'Kundenprojekt <b>Peter</b> hat in 3 Tagen Deadline — der letzte Feinschliff fehlt noch.' },
+  { level:'warn', text:'Du hast <b>8 Content-Ideen</b> gesammelt, aber diese Woche erst einen Beitrag fertiggestellt.' },
+  { level:'warn', text:'<b>RemindFuel</b> ist seit 6 Tagen still — deine Audience dort reagiert normalerweise stark auf Regelmäßigkeit.' },
+];
+
+let INBOX = [
+  { id:'i1', kind:'idea', brand:'feelweb', text:'Vielleicht aus dem Website Content Planner später eine günstigere Version nur für die Sitemap machen.',
+    ai:{ type:'Produktidee', brand:'feelweb', linked:'Website Content Planner', potential:'Hoch — passt zur 0€-Planer-Zielgruppe', action:'Idee weiterdenken' } },
+  { id:'i2', kind:'link', brand:'remindfuel', text:'Reel-Format von @slow.mornings gesehen — Textaufbau könnte für Minddrops funktionieren.',
+    ai:{ type:'Format-Inspiration', brand:'RemindFuel', linked:'Reel-Produktion', potential:'Mittel — als Vorlage testen', action:'Als Aufgabe' } },
+  { id:'i3', kind:'task', brand:'feelweb', text:'Rechnung an Uta noch stellen, Wartung September ist fertig.',
+    ai:{ type:'Erledigung', brand:'feelweb', linked:'Uta Ortwein — Wartung', potential:'Direkt umsetzbar', action:'Als Aufgabe' } },
+  { id:'i4', kind:'idea', brand:'lodora', text:'Lodora könnte einen ruhigen „Sonntagsbrief“ bekommen, statt normalem Newsletter.',
+    ai:{ type:'Content-Idee', brand:'Lodora', linked:'Newsletter-Konzept', potential:'Noch unklar — braucht mehr Gedanken', action:'Weiterdenken' } },
+  { id:'i5', kind:'thought', brand:'—', text:'Bin ich zu sehr im Umsetzen und zu wenig im Positionieren gerade?',
+    ai:{ type:'Reflexion', brand:'—', linked:'Businessstrategie', potential:'Kein Umsatzbezug — trotzdem wichtig', action:'Parken' } },
+];
+
+const WORK = [
+  { id:'w1', cat:'own', title:'Website Content Planner', sub:'Eigenes Produkt · feelweb', impact:'Hoch', effort:'Mittel', deadline:'—', energy:'Fokus', potential:'Hoch (Wachstum)',
+    tasks:[ {id:'t1',text:'Grobkonzept stehen',done:true}, {id:'t2',text:'Preismodell festlegen',done:true}, {id:'t3',text:'Landingpage-Text schreiben',done:false}, {id:'t4',text:'Testphase mit 2 Kundinnen planen',done:false} ] },
+  { id:'w2', cat:'own', title:'Business OS', sub:'Internes Tool · feelweb', impact:'Hoch', effort:'Hoch', deadline:'—', energy:'Fokus', potential:'Mittel (Effizienz)',
+    tasks:[ {id:'t1',text:'Grundstruktur definieren',done:true}, {id:'t2',text:'Home-Bereich gestalten',done:true}, {id:'t3',text:'Projekte-Ansicht überarbeiten',done:false}, {id:'t4',text:'Mit echten Daten testen',done:false} ] },
+  { id:'w3', cat:'own', title:'Kickstart your Website', sub:'Kurs · feelweb', impact:'Hoch', effort:'Hoch', deadline:'Launch Okt', energy:'Fokus', potential:'Hoch (Umsatz)',
+    tasks:[ {id:'t1',text:'Module 1–3 Skript fertig',done:true}, {id:'t2',text:'Modul 4 Skript schreiben',done:false}, {id:'t3',text:'Videos aufnehmen',done:false}, {id:'t4',text:'Landingpage bauen',done:false} ] },
+  { id:'w4', cat:'experiments', title:'Cozy YouTube Experiment', sub:'Experiment · privat', impact:'Niedrig', effort:'Niedrig', deadline:'—', energy:'Leicht', potential:'Unklar',
+    tasks:[ {id:'t1',text:'Kanal-Konzept skizzieren',done:true}, {id:'t2',text:'Erstes Video planen',done:false} ] },
+  { id:'w5', cat:'client', title:'Living Boutique Hotel', sub:'Kundenprojekt · Website', photo:true, impact:'Hoch', effort:'Hoch', deadline:'2. Okt', energy:'Fokus', potential:'Hoch',
+    client:{ value:'3.200 €', status:'In Umsetzung', source:'Empfehlung von Peter', next:'Startseite final abstimmen', content:'Hoch — viele Fotomotive' },
+    tasks:[ {id:'t1',text:'Kickoff & Fotos gesichtet',done:true}, {id:'t2',text:'Startseite entworfen',done:true}, {id:'t3',text:'Startseite final abstimmen',done:false}, {id:'t4',text:'Unterseiten aufbauen',done:false} ] },
+  { id:'w6', cat:'client', title:'Peter — Coaching-Website', sub:'Kundenprojekt · Relaunch', impact:'Hoch', effort:'Niedrig', deadline:'18. Sep', energy:'Leicht', potential:'Mittel',
+    client:{ value:'1.450 €', status:'Letzter Feinschliff', source:'Bestandskunde', next:'Texte auf Startseite freigeben lassen', content:'Mittel' },
+    tasks:[ {id:'t1',text:'Struktur final',done:true}, {id:'t2',text:'Texte geschrieben',done:true}, {id:'t3',text:'Design final',done:true}, {id:'t4',text:'Texte von Peter freigeben lassen',done:false} ] },
+  { id:'w7', cat:'products', title:'0€ Website Planer', sub:'Vorprodukt · feelweb', impact:'Mittel', effort:'Niedrig', deadline:'—', energy:'Leicht', potential:'Hoch (Leads)',
+    tasks:[ {id:'t1',text:'Struktur-Vorlage entworfen',done:true}, {id:'t2',text:'Moodboard-Teil bauen',done:false}, {id:'t3',text:'Landingpage schreiben',done:false} ] },
+  { id:'w8', cat:'products', title:'Lead-Magnet Quiz', sub:'Tool · Lovable-Kurs', impact:'Mittel', effort:'Mittel', deadline:'—', energy:'Fokus', potential:'Mittel',
+    tasks:[ {id:'t1',text:'Fragen entworfen',done:true}, {id:'t2',text:'Ergebnis-Typen geschrieben',done:false}, {id:'t3',text:'Technisch umsetzen',done:false} ] },
+];
+const CAT_ICON = { client:ICN.work, own:ICN.home, products:ICN.content, experiments:ICN.spark };
+const CAT_LABEL_SHORT = { client:'Kundenprojekt', own:'Eigenes Projekt', products:'Produkt', experiments:'Experiment' };
+
+const CONTENT = {
+  feelweb: [
+    { id:'c1', status:'ideas', title:'Warum "professionell" nicht gleich "steif" bedeutet', m:'Idee · noch offen' },
+    { id:'c2', status:'ideas', title:'Was ein 0€ Website-Planer wirklich bringt', m:'Idee · noch offen' },
+    { id:'c3', status:'explore', title:'Hinter den Kulissen: Business OS Prototyp', m:'Entdecken · Richtung gesucht' },
+    { id:'c4', status:'draft', title:'Carousel: 5 Zeichen, dass deine Website dich ausbremst', m:'Entwurf · 3 von 6 Slides' },
+    { id:'c5', status:'ready', title:'Reel: Der teuerste Website-Fehler', m:'Bereit · Veröffentlichung offen' },
+    { id:'c6', status:'published', title:'Carousel: Weniger ist mehr — auch auf deiner Website', m:'Veröffentlicht · Mo' },
+  ],
+  lodora: [
+    { id:'c7', status:'ideas', title:'Sonntagsbrief statt klassischem Newsletter', m:'Idee · noch offen' },
+    { id:'c8', status:'explore', title:'Was Lodora eigentlich von anderen Marken unterscheidet', m:'Entdecken' },
+  ],
+  remindfuel: [
+    { id:'c9', status:'draft', title:'Perspektivwechsel: „Du musst nicht jeden Tag wachsen“', m:'Entwurf · wird zu Reel', focus:true },
+    { id:'c10', status:'ideas', title:'Minddrop zu Selbstvertrauen ohne Vergleich', m:'Idee · noch offen' },
+    { id:'c11', status:'ideas', title:'Warum Pausen produktiv sind', m:'Idee · noch offen' },
+    { id:'c12', status:'ready', title:'Carousel: 3 Zeichen von Selbstüberforderung', m:'Bereit' },
+    { id:'c13', status:'published', title:'Minddrop: Ruhe ist auch ein Ergebnis', m:'Veröffentlicht · Fr' },
+  ],
+};
+
+const LEARNED = [
+  { text:'Heike bevorzugt konkrete Aussagen gegenüber abstrakten Formulierungen wie „fühlt sich nach dir an".', conf:'Hoch',
+    sources:['Korrektur in RemindFuel-Reel „Mut“ (2. Sep): „zu vage — konkreter machen"','Korrektur in feelweb-Carousel (28. Aug): abstrakte Zeile ersetzt durch konkretes Beispiel'] },
+  { text:'Bei feelweb-Content bevorzugt Heike kurze Sätze und vermeidet Konstruktionen wie „nicht nur X, sondern Y".', conf:'Hoch',
+    sources:['Wiederholte Anmerkung in 4 Content-Reviews seit August','Explizite Regel im Brand-Voice-Dokument feelweb'] },
+  { text:'Kundenprojekte mit klarer Deadline bearbeitet Heike bevorzugt am Vormittag.', conf:'Mittel',
+    sources:['Zeitpunkt abgeschlossener Aufgaben der letzten 3 Wochen: 6 von 8 vor 12 Uhr'] },
+  { text:'Heike lässt Ideen mit unklarem Umsatzbezug gerne erstmal „parken" statt sie sofort zu verwerfen.', conf:'Mittel',
+    sources:['Inbox-Verhalten: 5 der letzten 12 Einträge wurden geparkt statt gelöscht'] },
+];
+
+const AI_FIELD_TEXT = `Manchmal reicht ein kleiner Perspektivwechsel. Du musst nicht jeden Tag wachsen, um vorwärtszukommen.
+
+Manche der wichtigsten Schritte sehen von außen aus wie Stillstand.`;
+
+/* ============================================================
+   STATE
+============================================================ */
+const state = {
+  view:'home', capacity:'normal', focus:0, workTab:'all', contentBrand:'feelweb',
+  activeWorkspace:null, aiContext:'Start', dailyCheckDone:false, dcDraftCapacity:'normal', dcDraftFocus:0,
+};
+
+/* ============================================================
+   SIDEBAR / NAV
+============================================================ */
+const NAV = [
+  {key:'home', label:'Start'}, {key:'inbox', label:'Eingang'}, {key:'work', label:'Projekte'},
+  {key:'content', label:'Content'}, {key:'brain', label:'Wissen'}, {key:'review', label:'Rückblick'},
+];
+function renderNav(){
+  document.getElementById('navgroup').innerHTML = NAV.map(n => `
+    <div class="navitem ${state.view===n.key?'active':''}" data-nav="${n.key}">
+      ${ICN[n.key]}<span class="navlabel">${n.label}</span>
+      ${n.key==='inbox' ? '<span class="dot-badge"></span>' : ''}
+    </div>`).join('');
+  document.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click', ()=>{ state.view = el.dataset.nav; state.aiContext = NAV.find(n=>n.key===state.view).label; render(); }));
+}
+document.getElementById('collapseBtn').addEventListener('click', ()=>document.getElementById('sidebar').classList.toggle('collapsed'));
+
+/* ============================================================
+   RENDER ROUTER
+============================================================ */
+function render(){
+  renderNav();
+  const main = document.getElementById('main');
+  if(state.view==='home') main.innerHTML = viewHome();
+  if(state.view==='inbox') main.innerHTML = viewInbox();
+  if(state.view==='work') main.innerHTML = viewWork();
+  if(state.view==='content') main.innerHTML = viewContent();
+  if(state.view==='brain') main.innerHTML = viewBrain();
+  if(state.view==='review') main.innerHTML = viewReview();
+  bindView();
+  document.getElementById('aiContextLabel').textContent = state.aiContext;
+}
+
+/* ============================================================
+   HOME
+============================================================ */
+function greeting(){
+  const h = new Date().getHours();
+  return h<11 ? 'Guten Morgen, Heike.' : h<18 ? 'Guten Tag, Heike.' : 'Guten Abend, Heike.';
+}
+const CAP_LABEL = {low:'Niedrig', normal:'Normal', high:'Hoch'};
+const CAP_COLOR = {low:'var(--warn)', normal:'var(--grad-ink)', high:'var(--good)'};
+
+function viewHome(){
+  return `
+  <section class="home-hero">
+    <h1>${greeting()}</h1>
+    <p class="sub">Lass uns entscheiden, was heute wirklich zählt.</p>
+  </section>
+
+  ${state.dailyCheckDone ? `
+  <div class="daycheck-summary">
+    <div class="dcs-item">
+      <span class="dcs-k">Kapazität heute</span>
+      <span class="dcs-v dcs-cap"><span class="cdot" style="background:${CAP_COLOR[state.capacity]}"></span>${CAP_LABEL[state.capacity]}</span>
+    </div>
+    <div class="dcs-divider"></div>
+    <div class="dcs-item grow">
+      <span class="dcs-k">Fokus heute · ${FOCUS[state.focus].cat}</span>
+      <span class="dcs-v">${FOCUS[state.focus].title}</span>
+    </div>
+    <button class="btn ghost sm" id="reopenDayCheck">Ändern</button>
+  </div>` : ''}
+
+  <div class="glance-grid">
+    <div class="glance-tile"><div class="gk">${ICN.review}Steht an</div><div class="gv">${GLANCE.ansteht.value}</div><div class="gs">${GLANCE.ansteht.sub}</div></div>
+    <div class="glance-tile"><div class="gk">${ICN.home}Wo du stehst</div><div class="gv">${GLANCE.status.value}</div><div class="gs">${GLANCE.status.sub}</div></div>
+    <div class="glance-tile"><div class="gk">${ICN.inbox}Noch offen</div><div class="gv">${GLANCE.offen.value}</div><div class="gs">${GLANCE.offen.sub}</div></div>
+    <div class="glance-tile potential"><div class="gk">${ICN.spark}Größtes Potential</div><div class="gv">${GLANCE.potential.value}</div><div class="gs">${GLANCE.potential.sub}</div></div>
+  </div>
+
+  <div class="section-head"><h2>Diese Woche</h2><span class="hint">auf einen Blick</span></div>
+  <div class="week-hero">
+    <div><div class="wh-num">${WEEK.deadlineDays} Tage</div><div class="wh-lbl">bis zur nächsten Deadline — ${WEEK.deadlineWhat}</div></div>
+    <span class="pill grad">${WEEK.deadlineDate}</span>
+  </div>
+  <div class="week-tiles">
+    ${[['Hauptfokus',WEEK.haupt,'var(--sky)',0],['Umsatzfokus',WEEK.umsatz,'var(--good)',1],['Wachstumsfokus',WEEK.wachstum,'var(--sky)',null]].map(([label,val,dot,focusIdx])=>{
+      const isFocus = focusIdx!==null && state.focus===focusIdx;
+      return `
+      <div class="week-tile ${isFocus?'is-focus':''}">
+        ${isFocus?'<span class="wt-badge">Dein Fokus</span>':''}
+        <div class="wt-k"><span class="wt-icon" style="background:${dot}"></span>${label}</div>
+        <div class="wt-v">${val}</div>
+      </div>`;
+    }).join('')}
+    <div class="week-tile">
+      <div class="wt-k">${ICN.content}Contentfortschritt</div>
+      <div class="ring-row" style="margin-top:10px;">
+        ${Object.keys(WEEK.content).map(b=>{
+          const pct = Math.round(WEEK.content[b]*100);
+          return `<div class="ring-col">
+            <div class="ring" style="background:conic-gradient(from -90deg, ${BRANDS[b].color} ${pct}%, var(--surface-2) 0)">
+              <div class="ring-inner"><span class="ring-pct">${pct}%</span></div>
+            </div>
+            <div class="ring-label">${BRANDS[b].name}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>
+
+  <div class="section-head"><h2>Was noch offen ist</h2></div>
+  <div class="attn-list">
+    ${ATTENTION.map(a=>`<div class="attn-item ${a.level}">${ICN.alert}<div class="t">${a.text}</div></div>`).join('')}
+  </div>
+
+  <div class="braindump-wrap">
+    <div class="braindump-box glow-ring">
+      <div class="braindump-inner">
+        ${ICN.spark}
+        <input id="brainInput" placeholder="Was ist gerade in deinem Kopf?" />
+        <button class="braindump-send" id="brainSend">Ablegen</button>
+      </div>
+    </div>
+    <div class="braindump-hint">Kein Projekt, keine Kategorie nötig — deine KI ordnet es ein.</div>
+    <div id="brainReveal"></div>
+  </div>
+
+  <div class="modal-overlay" id="dayCheckOverlay">${renderDayCheckModal()}</div>
+  `;
+}
+
+/* ---- Tagescheck: Kapazität & Fokus als Popup-Abfrage, der Rest von Home
+   richtet sich danach aus ---- */
+function renderDayCheckModal(){
+  return `
+  <div class="modal">
+    <div class="eyebrow">Tagescheck</div>
+    <h2>Wie startest du heute?</h2>
+    <p class="sub">Kurz einordnen — der Rest der Seite richtet sich danach aus.</p>
+    <div class="dc-block">
+      <div class="dc-label">Deine Kapazität heute</div>
+      <div class="cap-select large">
+        ${['low','normal','high'].map(c=>`<button class="cap-opt ${state.dcDraftCapacity===c?'active':''}" data-dccap="${c}">${CAP_LABEL[c]}</button>`).join('')}
+      </div>
+    </div>
+    <div class="dc-block">
+      <div class="dc-label">Worauf soll dein Fokus heute liegen?</div>
+      <div class="dc-focus-list">
+        ${FOCUS.map((f,i)=>`
+          <div class="dc-focus-row ${state.dcDraftFocus===i?'selected':''}" data-dcfocus="${i}">
+            <div class="dc-radio"></div>
+            <div><div class="cat">${f.cat}</div><div class="ti">${f.title}</div><div class="wy">${f.why}</div></div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <button class="btn primary dc-submit" id="dayCheckSubmit">Los geht's →</button>
+  </div>`;
+}
+function openDayCheckModal(){
+  state.dcDraftCapacity = state.capacity; state.dcDraftFocus = state.focus;
+  document.getElementById('dayCheckOverlay').innerHTML = renderDayCheckModal();
+  document.getElementById('dayCheckOverlay').classList.add('open');
+  bindDayCheckModal();
+}
+function bindDayCheckModal(){
+  document.querySelectorAll('[data-dccap]').forEach(el=>el.addEventListener('click', ()=>{ state.dcDraftCapacity = el.dataset.dccap; document.getElementById('dayCheckOverlay').innerHTML = renderDayCheckModal(); bindDayCheckModal(); }));
+  document.querySelectorAll('[data-dcfocus]').forEach(el=>el.addEventListener('click', ()=>{ state.dcDraftFocus = +el.dataset.dcfocus; document.getElementById('dayCheckOverlay').innerHTML = renderDayCheckModal(); bindDayCheckModal(); }));
+  document.getElementById('dayCheckSubmit').addEventListener('click', ()=>{
+    state.capacity = state.dcDraftCapacity; state.focus = state.dcDraftFocus; state.dailyCheckDone = true;
+    document.getElementById('dayCheckOverlay').classList.remove('open');
+    render();
+  });
+}
+
+function bindHome(){
+  if(!state.dailyCheckDone){ openDayCheckModal(); }
+  const reopen = document.getElementById('reopenDayCheck');
+  if(reopen) reopen.addEventListener('click', openDayCheckModal);
+  const input = document.getElementById('brainInput');
+  const send = document.getElementById('brainSend');
+  const submit = ()=>{
+    const val = input.value.trim();
+    if(!val) return;
+    const reveal = document.getElementById('brainReveal');
+    reveal.innerHTML = `<div class="ai-reveal"><div class="ai-reveal-head"><span class="ai-dotgrad"></span>Verstehe...</div></div>`;
+    input.value=''; send.disabled = true;
+    setTimeout(()=>{
+      const guess = guessCategorization(val);
+      reveal.innerHTML = `
+        <div class="ai-reveal">
+          <div class="ai-reveal-head"><span class="ai-dotgrad"></span>In die Inbox abgelegt & eingeordnet</div>
+          <p style="margin-top:10px; font-size:14.5px; font-weight:600;">„${val}"</p>
+          <div class="ai-tags">
+            <span class="ai-tag">${guess.type}</span>
+            <span class="ai-tag">Marke: ${guess.brand}</span>
+            <span class="ai-tag">${guess.potential}</span>
+          </div>
+        </div>`;
+      INBOX.unshift({id:'i'+Date.now(), kind:'idea', brand:guess.brandKey, text:val, ai:{type:guess.type, brand:guess.brand, linked:guess.linked, potential:guess.potential, action:'Weiterdenken'}});
+      send.disabled = false;
+    }, 900);
+  };
+  send.addEventListener('click', submit);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
+}
+function guessCategorization(text){
+  const t = text.toLowerCase();
+  if(t.includes('remindfuel') || t.includes('reel') || t.includes('minddrop')) return {type:'Content-Idee', brand:'RemindFuel', brandKey:'remindfuel', linked:'Content-Planung', potential:'Sichtbarkeit'};
+  if(t.includes('lodora')) return {type:'Idee', brand:'Lodora', brandKey:'lodora', linked:'Lodora', potential:'Unklar'};
+  if(t.includes('kunde') || t.includes('projekt') || t.includes('rechnung')) return {type:'Aufgabe', brand:'feelweb', brandKey:'feelweb', linked:'Kundenarbeit', potential:'Umsatzrelevant'};
+  return {type:'Gedanke', brand:'feelweb', brandKey:'feelweb', linked:'Noch offen', potential:'Wird geprüft'};
+}
+
+/* ============================================================
+   INBOX
+============================================================ */
+const KIND_COLOR = {idea:'var(--sky)', link:'var(--mint)', task:'var(--good)', thought:'var(--ink-3)'};
+function viewInbox(){
+  return `
+  <div class="home-hero" style="padding-bottom:8px;">
+    <h1 style="font-size:32px;">Eingang</h1>
+    <p class="sub">Alles, was noch keinen Platz hat. ${INBOX.length} offene Einträge.</p>
+  </div>
+  <div class="inbox-list">
+    ${INBOX.map(i=>`
+      <div class="inbox-item" data-inbox="${i.id}">
+        <span class="kind-dot" style="background:${KIND_COLOR[i.kind]||'var(--ink-3)'}"></span>
+        <span class="txt">${i.text}</span>
+        <span class="meta">${i.brand}</span>
+      </div>`).join('')}
+  </div>`;
+}
+function bindInbox(){
+  document.querySelectorAll('[data-inbox]').forEach(el=>el.addEventListener('click', ()=>openInboxSheet(el.dataset.inbox)));
+}
+function openInboxSheet(id){
+  const item = INBOX.find(i=>i.id===id);
+  document.getElementById('sheet').innerHTML = `
+    <button class="sheet-close" id="closeSheet">✕</button>
+    <h3>Gedanke</h3>
+    <div class="quote">„${item.text}"</div>
+    <div class="understand-box">
+      <div class="ai-reveal-head"><span class="ai-dotgrad"></span>Ich habe das so verstanden:</div>
+      <div class="ufact"><span class="k">Typ</span><span class="v">${item.ai.type}</span></div>
+      <div class="ufact"><span class="k">Marke</span><span class="v">${item.ai.brand}</span></div>
+      <div class="ufact"><span class="k">Verknüpft mit</span><span class="v">${item.ai.linked}</span></div>
+      <div class="ufact"><span class="k">Potential</span><span class="v">${item.ai.potential}</span></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn primary" data-act="think">Weiterdenken</button>
+      <button class="btn" data-act="task">Als Aufgabe</button>
+      <button class="btn ghost" data-act="park">Parken</button>
+    </div>
+  `;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('closeSheet').addEventListener('click', closeSheet);
+  document.querySelectorAll('[data-act]').forEach(el=>el.addEventListener('click', ()=>{
+    INBOX = INBOX.filter(i=>i.id!==id);
+    closeSheet(); render();
+  }));
+}
+function closeSheet(){ document.getElementById('overlay').classList.remove('open'); }
+document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeSheet(); });
+
+/* ============================================================
+   WORK
+============================================================ */
+const WORK_TABS = [ ['all','Alle Projekte'], ['client','Kundenprojekte'], ['own','Eigene Projekte'], ['products','Produkte'], ['experiments','Experimente'] ];
+function dots(level){
+  const map = {'Hoch':3,'Mittel':2,'Niedrig':1,'Unklar':1};
+  const key = Object.keys(map).find(k=>(level||'').startsWith(k));
+  const n = key?map[key]:2;
+  return `<span class="dot-scale">${[0,1,2].map(i=>`<span class="d ${i<n?'on':''}"></span>`).join('')}</span>`;
+}
+function viewWork(){
+  const items = WORK.filter(w=>state.workTab==='all' || w.cat===state.workTab);
+  return `
+  <div class="home-hero" style="padding-bottom:8px;"><h1 style="font-size:32px;">Projekte</h1><p class="sub">Alles, woran du gerade arbeitest, mit den einzelnen Aufgaben zum Abhaken.</p></div>
+  <div class="tabbar">${WORK_TABS.map(([k,l])=>`<button class="${state.workTab===k?'active':''}" data-wtab="${k}">${l}</button>`).join('')}</div>
+  <div class="work-list">
+    ${items.map(w=>{
+      const done = w.tasks.filter(t=>t.done).length, total = w.tasks.length;
+      const pct = total ? Math.round(done/total*100) : 0;
+      return `
+      <div class="work-card">
+        <div class="wc-head">
+          <div class="wc-tile ${w.photo?'photo':''}">${CAT_ICON[w.cat]}</div>
+          <div class="wc-body">
+            <div class="wc-toprow">
+              <div><div class="wc-title">${w.title}</div><div class="wc-sub">${w.sub}</div></div>
+              ${w.client?`<span class="pill grad">${w.client.value}</span>`:''}
+            </div>
+            <div class="wc-badges">
+              <span class="metabit-visual">Wirkung ${dots(w.impact)}</span>
+              <span class="metabit-visual">Aufwand ${dots(w.effort)}</span>
+              <span class="metabit-visual">Potential ${dots(w.potential)}</span>
+              <span class="metabit">Deadline <b>${w.deadline}</b></span>
+              <span class="metabit">Energie <b>${w.energy}</b></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="wc-progress-wrap">
+          <div class="wc-progress-track"><div class="wc-progress-fill" style="width:${pct}%"></div></div>
+          <div class="wc-progress-label">${done} von ${total} Aufgaben erledigt</div>
+        </div>
+        <div class="wc-tasks">
+          ${w.tasks.map(t=>`
+            <div class="task-row ${t.done?'done':''}" data-task="${w.id}::${t.id}">
+              <div class="task-check">${ICN.check}</div>
+              <div class="task-text">${t.text}</div>
+            </div>`).join('')}
+        </div>
+
+        ${w.client?`
+          <div class="wc-client-strip">
+            <span>Status: <b>${w.client.status}</b></span>
+            <span>Quelle: <b>${w.client.source}</b></span>
+            <span>Content-Potential: <b>${w.client.content}</b></span>
+            <span>Nächster Schritt: <b>${w.client.next}</b></span>
+          </div>`:''}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+function bindWork(){
+  document.querySelectorAll('[data-wtab]').forEach(el=>el.addEventListener('click', ()=>{ state.workTab = el.dataset.wtab; render(); }));
+  document.querySelectorAll('[data-task]').forEach(el=>el.addEventListener('click', ()=>{
+    const [wid,tid] = el.dataset.task.split('::');
+    const w = WORK.find(x=>x.id===wid); const t = w.tasks.find(x=>x.id===tid);
+    t.done = !t.done; render();
+  }));
+}
+
+/* ============================================================
+   CONTENT
+============================================================ */
+const STATUS_COLS = [ ['ideas','Ideen'], ['explore','Entdecken'], ['draft','Entwurf'], ['ready','Bereit'], ['published','Veröffentlicht'] ];
+function viewContent(){
+  if(state.activeWorkspace) return viewWorkspace(state.activeWorkspace);
+  const items = CONTENT[state.contentBrand];
+  return `
+  <div class="home-hero" style="padding-bottom:8px;"><h1 style="font-size:32px;">Content</h1><p class="sub">Von der ersten Idee bis zur Veröffentlichung — für alle deine Marken an einem Ort.</p></div>
+  <div class="brand-tabs">
+    ${Object.keys(BRANDS).map(b=>`<div class="brand-tab ${state.contentBrand===b?'active':''}" data-cbrand="${b}"><span class="sw" style="background:${BRANDS[b].color}"></span>${BRANDS[b].name}</div>`).join('')}
+  </div>
+  <div class="status-lanes">
+    ${STATUS_COLS.map(([k,l])=>`
+      <div>
+        <div class="lane-head">${l}<span>${items.filter(i=>i.status===k).length}</span></div>
+        <div class="lane">
+          ${items.filter(i=>i.status===k).map(c=>`
+            <div class="content-card" data-content="${c.id}">
+              <div class="t">${c.title}</div>
+              <div class="m">${c.m}</div>
+            </div>`).join('')}
+        </div>
+      </div>`).join('')}
+  </div>`;
+}
+function bindContent(){
+  document.querySelectorAll('[data-cbrand]').forEach(el=>el.addEventListener('click', ()=>{ state.contentBrand = el.dataset.cbrand; render(); }));
+  document.querySelectorAll('[data-content]').forEach(el=>el.addEventListener('click', ()=>{ state.activeWorkspace = el.dataset.content; render(); }));
+}
+
+const CHAT_LOG = {}; // per content id
+function viewWorkspace(id){
+  const all = Object.values(CONTENT).flat();
+  const item = all.find(c=>c.id===id);
+  if(!CHAT_LOG[id]) CHAT_LOG[id] = [
+    {who:'ai', text:`Ich hab deinen Gedanken schon mal ins Dokument gelegt. Sag mir, wenn ich etwas vertiefen, kürzen oder anders angehen soll.`}
+  ];
+  const brandKey = Object.keys(CONTENT).find(b=>CONTENT[b].some(c=>c.id===id));
+  return `
+  <div class="ws-head">
+    <button class="btn ghost" id="wsBack">← Zurück zu ${BRANDS[brandKey].name}</button>
+    <span class="pill neutral">${item.m}</span>
+  </div>
+  <div class="ws-split">
+    <div class="ws-doc" style="position:relative;">
+      <div class="doc-title">${item.title}</div>
+      <div class="doc-body" id="docBody" contenteditable="true" spellcheck="false">${AI_FIELD_TEXT.split('\n\n').map(p=>`<p style="margin-bottom:14px;">${p}</p>`).join('')}</div>
+      <div class="selection-popover" id="selPop">
+        <button data-sel="rewrite">Überarbeiten</button>
+        <button data-sel="deeper">Tiefer denken</button>
+        <button data-sel="concrete">Konkreter</button>
+      </div>
+      <div class="ws-actions">
+        <button class="btn" data-quick="reel">Reel daraus</button>
+        <button class="btn" data-quick="carousel">Carousel daraus</button>
+        <button class="btn" data-quick="caption">Caption</button>
+        <button class="btn" data-quick="think">Weiterdenken</button>
+      </div>
+    </div>
+    <div class="ws-ai">
+      <div class="ws-ai-head"><span class="ai-dotgrad"></span>KI-Assistent</div>
+      <div class="ws-chat scroll-thin" id="wsChat">${renderChat(id)}</div>
+      <div class="ws-chat-input">
+        <input id="wsChatInput" placeholder="z.B. „das ist mir zu kitschig”" />
+        <button id="wsChatSend">${ICN.send}</button>
+      </div>
+    </div>
+  </div>`;
+}
+function renderChat(id){
+  return CHAT_LOG[id].map(m=> m.who==='ai'
+    ? `<div class="msg ai"><div class="bubble">${m.text}</div></div>`
+    : `<div class="msg user">${m.text}</div>`).join('');
+}
+function aiReply(userText){
+  const t = userText.toLowerCase();
+  if(t.includes('kitsch')) return 'Verstanden — ich nehme die weichen Formulierungen raus und mache den Ton nüchterner. Einen Moment.';
+  if(t.includes('tiefer')) return 'Guter Impuls. Was wäre, wenn wir nicht nur sagen *dass* Stillstand okay ist, sondern zeigen, *woran man ihn im Alltag erkennt*? Das macht es greifbarer.';
+  if(t.includes('konkret')) return 'Ich ersetze den Einstieg durch ein konkretes Bild statt der allgemeinen Aussage — das passt besser zu deinem Stil.';
+  if(t.includes('perspektive')) return 'Hier drei: 1) Stillstand als Erholung fürs Nervensystem. 2) Stillstand als Zeichen, dass du gerade neu kalibrierst. 3) Stillstand, den nur du siehst — von außen wirkt es oft wie Fortschritt.';
+  return 'Ich denk das weiter und melde mich mit einer überarbeiteten Version.';
+}
+function bindWorkspace(id){
+  document.getElementById('wsBack').addEventListener('click', ()=>{ state.activeWorkspace=null; render(); });
+  const chatBody = document.getElementById('wsChat');
+  const send = ()=>{
+    const inp = document.getElementById('wsChatInput');
+    const val = inp.value.trim(); if(!val) return;
+    CHAT_LOG[id].push({who:'user', text:val}); inp.value='';
+    chatBody.innerHTML = renderChat(id) + `<div class="msg ai"><span class="typing"><span></span><span></span><span></span></span></div>`;
+    chatBody.scrollTop = chatBody.scrollHeight;
+    setTimeout(()=>{ CHAT_LOG[id].push({who:'ai', text:aiReply(val)}); chatBody.innerHTML = renderChat(id); chatBody.scrollTop = chatBody.scrollHeight; }, 1000);
+  };
+  document.getElementById('wsChatSend').addEventListener('click', send);
+  document.getElementById('wsChatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
+  document.querySelectorAll('[data-quick]').forEach(el=>el.addEventListener('click', ()=>{
+    const map = {reel:'Ich forme daraus ein Reel-Skript mit Hook, Mitte und Call-to-Action.', carousel:'Ich baue daraus ein 5-Slide-Carousel im RemindFuel-Stil.', caption:'Ich schreibe eine passende Caption dazu.', think:'Lass uns den Gedanken gemeinsam weiterspinnen — was fehlt deiner Meinung nach noch?'};
+    CHAT_LOG[id].push({who:'ai', text: map[el.dataset.quick]});
+    document.getElementById('wsChat').innerHTML = renderChat(id);
+  }));
+  const doc = document.getElementById('docBody'); const pop = document.getElementById('selPop');
+  doc.addEventListener('mouseup', ()=>{
+    const sel = window.getSelection();
+    if(sel && sel.toString().trim().length>3){
+      const r = sel.getRangeAt(0).getBoundingClientRect();
+      const parentRect = doc.parentElement.getBoundingClientRect();
+      pop.style.display='flex';
+      pop.style.top = (r.top - parentRect.top - 44) + 'px';
+      pop.style.left = Math.max(0,(r.left - parentRect.left)) + 'px';
+    } else { pop.style.display='none'; }
+  });
+  document.querySelectorAll('[data-sel]').forEach(el=>el.addEventListener('click', ()=>{
+    pop.style.display='none';
+    const map = {rewrite:'Ich habe die markierte Stelle überarbeitet — schau sie dir gleich im Dokument an.', deeper:'Ich vertiefe genau diesen Gedanken.', concrete:'Ich mache diese Stelle konkreter.'};
+    CHAT_LOG[id].push({who:'ai', text: map[el.dataset.sel]});
+    document.getElementById('wsChat').innerHTML = renderChat(id);
+  }));
+}
+
+/* ============================================================
+   BRAIN
+============================================================ */
+const BRAIN_TABS = [['me','Ich'],['brands','Marken'],['knowledge','Fachwissen'],['learned','Gelernt']];
+let brainTab = 'brands'; let brainBrand='feelweb';
+const BRAND_DETAIL = {
+  feelweb:{ Identität:'Web- & Brand-Designstudio für Frauen in der (Teilzeit-)Selbstständigkeit.', Zielgruppe:'Selbstständige Frauen, die eine Website wollen, die zu ihnen passt — ohne Tech-Overwhelm.',
+    Angebote:'Website-Design, Kickstart-Kurs, Wartung, Content-Begleitung.', Perspektive:'Weniger ist mehr — Klarheit schlägt Vollständigkeit.',
+    Stimme:'Locker, emotional, empathisch, nie belehrend.', Content:'Carousels, Reels, Einzelposts rund um Website & Sichtbarkeit.', Beispiele:'„Weniger ist mehr — auch auf deiner Website“', 'No-Gos':'Keine Buzzwords, kein Fachchinesisch ohne Erklärung.' },
+  lodora:{ Identität:'Ruhige, hochwertige Marke — Positionierung noch in Entwicklung.', Zielgruppe:'Noch nicht final geschärft.', Angebote:'Wird aktuell definiert.', Perspektive:'Stille statt Lautstärke.', Stimme:'Zurückhaltend, warm.', Content:'Noch wenig — Sonntagsbrief in Planung.', Beispiele:'—', 'No-Gos':'Kein lautes Marketing-Vokabular.' },
+  remindfuel:{ Identität:'Anti-Hustle-Mindset-Marke — Minddrops & Perspektivwechsel.', Zielgruppe:'Menschen, die aus dem Leistungsdruck aussteigen wollen.', Angebote:'Instagram-Content, langfristig ein Kartendeck (Minddrop).', Perspektive:'Ruhe ist auch ein Ergebnis.', Stimme:'Direkt, tief, nie kitschig.', Content:'Minddrops, Reels, Carousels.', Beispiele:'„Du musst nicht jeden Tag wachsen.“', 'No-Gos':'Keine Kitsch-Formulierungen, keine leeren Superlative.' },
+};
+function viewBrain(){
+  return `
+  <div class="home-hero" style="padding-bottom:8px;"><h1 style="font-size:32px;">Wissen</h1><p class="sub">Alles, was deine KI über dich, deine Marken und dein Wissen gesammelt hat.</p></div>
+  <div class="tabbar">${BRAIN_TABS.map(([k,l])=>`<button class="${brainTab===k?'active':''}" data-btab="${k}">${l}</button>`).join('')}</div>
+  ${brainTab==='me' ? brainMe() : brainTab==='brands' ? brainBrands() : brainTab==='knowledge' ? brainKnowledge() : brainLearned()}
+  `;
+}
+function brainMe(){
+  return `<div class="brand-detail-grid">
+    ${[['Persönlichkeit','INFJ-T, introvertiert, hochsensibel'],['Hintergrund','Mental Coaching, Innenarchitektur, Webdesign'],['Arbeitsweise','Fokusblöcke am Vormittag, braucht Ruhe für tiefe Arbeit'],['Werte','Sinnhafte, menschenzentrierte Arbeit vor schnellem Wachstum']]
+      .map(([k,v])=>`<div class="bd-card"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}
+  </div>`;
+}
+function brainBrands(){
+  return `
+  <div class="brand-tabs">${Object.keys(BRANDS).map(b=>`<div class="brand-tab ${brainBrand===b?'active':''}" data-bbrand="${b}"><span class="sw" style="background:${BRANDS[b].color}"></span>${BRANDS[b].name}</div>`).join('')}</div>
+  <div class="brand-detail-grid">
+    ${Object.entries(BRAND_DETAIL[brainBrand]).map(([k,v])=>`<div class="bd-card"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}
+  </div>`;
+}
+function brainKnowledge(){
+  return `<div class="brand-detail-grid">
+    ${[['SEO','Google bewertet mittlerweile deutlich menschlicher — Substanz schlägt Keyword-Dichte.'],['Website-Struktur','Klare Sitemap vor Design — sonst wird später alles teurer.'],['Content-Rhythmus','Regelmäßigkeit schlägt Perfektion, besonders bei RemindFuel.'],['Kundenarbeit','Klare nächste Schritte verhindern die meisten Verzögerungen.']]
+      .map(([k,v])=>`<div class="bd-card"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}
+  </div>`;
+}
+function brainLearned(){
+  return `<div class="learned-list">
+    ${LEARNED.map((l,idx)=>`
+      <div class="learned-item">
+        <div class="li-top">
+          <div class="li-text">${l.text}</div>
+          <span class="pill ${l.conf==='Hoch'?'good':'warn'}">Sicherheit: ${l.conf}</span>
+        </div>
+        <button class="why-toggle" data-why="${idx}">Warum weiß ich das? ${ICN.chevr}</button>
+        <div class="why-box" id="why-${idx}">
+          ${l.sources.map(s=>`<div class="why-src">— ${s}</div>`).join('')}
+        </div>
+      </div>`).join('')}
+  </div>`;
+}
+function bindBrain(){
+  document.querySelectorAll('[data-btab]').forEach(el=>el.addEventListener('click', ()=>{ brainTab=el.dataset.btab; render(); }));
+  document.querySelectorAll('[data-bbrand]').forEach(el=>el.addEventListener('click', ()=>{ brainBrand=el.dataset.bbrand; render(); }));
+  document.querySelectorAll('[data-why]').forEach(el=>el.addEventListener('click', ()=>{ document.getElementById('why-'+el.dataset.why).classList.toggle('open'); }));
+}
+
+/* ============================================================
+   REVIEW
+============================================================ */
+const REVIEW_TABS = [['month','Monat'],['quarter','Quartal'],['year','Jahr']];
+let reviewTab='month';
+
+/* Ein Rückblick soll erst Abstand zum Zeitraum haben, bevor er ehrlich
+   sein kann — daher schaltet er erst in der letzten Woche frei
+   (Jahresrückblick: im Dezember, vor Weihnachten). */
+function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
+function fmtDate(d){ return d.toLocaleDateString('de-DE',{day:'numeric', month:'long'}); }
+function reviewAvailability(){
+  const now = new Date();
+  const y=now.getFullYear(), m=now.getMonth(), d=now.getDate();
+  const dim = daysInMonth(y,m);
+  const monthUnlockDate = new Date(y,m,dim-6);
+  const monthUnlocked = d >= dim-6;
+
+  const qEndMonths=[2,5,8,11];
+  const qEndMonth = qEndMonths[Math.floor(m/3)];
+  const qDim = daysInMonth(y,qEndMonth);
+  const quarterUnlockDate = new Date(y,qEndMonth,qDim-6);
+  const quarterUnlocked = m===qEndMonth && d>=qDim-6;
+
+  const yearUnlockDate = new Date(y,11,1); // 1. Dezember — "vor Weihnachten"
+  const yearUnlocked = m===11;
+
+  return {
+    month:{ unlocked:monthUnlocked, date:monthUnlockDate },
+    quarter:{ unlocked:quarterUnlocked, date:quarterUnlockDate },
+    year:{ unlocked:yearUnlocked, date:yearUnlockDate },
+  };
+}
+
+const REVIEW_LABEL = {month:'Monats', quarter:'Quartals', year:'Jahres'};
+
+const REVIEW_DATA = {
+  month:{
+    period:'September 2026',
+    nums:[['4.650 €','Umsatz'],['5','Kunden betreut'],['2','Projekte abgeschlossen'],['9','Beiträge veröffentlicht'],['780 €','Produktumsatz (Grundrauschen)']],
+    moved:['<b>Website Content Planner</b> vom losen Konzept zu einer klaren Struktur mit Preisidee weiterentwickelt.','<b>Kickstart your Website</b> Kurs-Skript für 3 weitere Module fertiggestellt.','<b>RemindFuel</b> von unregelmäßigem zu wöchentlichem Rhythmus zurückgefunden.'],
+    whereFrom:'3 von 5 Kundenprojekten kamen über <b>Empfehlungen</b> — allen voran über Peter, der dich inzwischen zweimal weiterempfohlen hat. Instagram brachte diesen Monat vor allem <b>Sichtbarkeit</b>, noch keine direkten Anfragen.',
+    created:['9 veröffentlichte Beiträge über feelweb, Lodora und RemindFuel','2 abgeschlossene Kundenwebsites','1 neues Konzept: 0€ Website Planer'],
+    decisions:[['4. Sep','Business OS Konzept gestartet — als internes Tool statt weiterer Zettelwirtschaft.'],['11. Sep','Entscheidung: Lodora bekommt einen ruhigeren, selteneren Content-Rhythmus statt festem Wochenplan.'],['16. Sep','0€ Website Planer als Vorprodukt vor den Kurs gesetzt, statt ihn direkt zu verkaufen.']],
+    changed:'Du triffst Entscheidungen inzwischen schneller — bei Lodora hast du dich bewusst gegen einen starren Rhythmus entschieden, statt wie früher lange abzuwägen. Und du lässt Ideen öfter erstmal <b>liegen und reifen</b>, statt sie sofort umzusetzen oder zu verwerfen.',
+  },
+  quarter:{
+    period:'Q3 2026',
+    nums:[['12.400 €','Umsatz'],['9','Kunden betreut'],['5','Projekte abgeschlossen'],['24','Beiträge veröffentlicht'],['2.100 €','Produktumsatz (Grundrauschen)']],
+    moved:['<b>Kickstart your Website</b> vom groben Konzept zu einem Kurs mit fertigem Modulplan.','<b>Business OS</b> als eigenes internes Tool angestoßen und zum klickbaren Prototyp gebracht.','<b>RemindFuel</b> von sporadischem Posten zu einem festen wöchentlichen Rhythmus.'],
+    whereFrom:'Über das Quartal kamen 6 von 9 Kundenprojekten über <b>Empfehlungen</b> — dein stärkster Kanal, ganz ohne Ads. Instagram hat vor allem <b>Sichtbarkeit</b> aufgebaut, noch nicht direkt in Anfragen übersetzt.',
+    created:['24 veröffentlichte Beiträge über feelweb, Lodora und RemindFuel','5 abgeschlossene Kundenprojekte','2 neue Konzepte: 0€ Website Planer, Business OS'],
+    decisions:[['Jul','Entscheidung: Kickstart your Website wird als eigenständiger Kurs statt als 1:1-Angebot aufgebaut.'],['Aug','Lodora bekommt bewusst weniger, dafür ruhigeren Content statt festem Plan.'],['Sep','0€ Website Planer als Vorprodukt vor den Kurs gesetzt, statt ihn direkt zu verkaufen.']],
+    changed:'Du planst inzwischen in Zeiträumen statt in einzelnen Tagen — Projekte wie der Kurs oder das Business OS sind über Wochen gewachsen, statt in einem Rutsch entstehen zu müssen. Und du lässt dich seltener von dringend wirkenden, aber unwichtigen Dingen ablenken.',
+  },
+  year:{
+    period:'2026',
+    nums:[['38.900 €','Umsatz'],['22','Kunden betreut'],['14','Projekte abgeschlossen'],['96','Beiträge veröffentlicht'],['6.400 €','Produktumsatz (Grundrauschen)']],
+    moved:['<b>feelweb</b> von reiner Auftragsarbeit zu einem Studio mit eigenen Produkten (Kurs, Planer, Business OS) weiterentwickelt.','<b>RemindFuel</b> von einer Idee zu einer Marke mit eigener Stimme und treuer kleiner Audience aufgebaut.','<b>Lodora</b> bewusst langsam und mit Substanz statt überstürzt positioniert.'],
+    whereFrom:'Über das Jahr kamen die meisten Kundenprojekte über <b>Empfehlungen</b> aus deinem bestehenden Netzwerk — Instagram hat vor allem Sichtbarkeit und Vertrauen aufgebaut, das sich erst langfristig auszahlt.',
+    created:['96 veröffentlichte Beiträge über feelweb, Lodora und RemindFuel','14 abgeschlossene Kundenprojekte','3 neue eigene Produkte: Kickstart your Website, 0€ Website Planer, Business OS'],
+    decisions:[['Frühjahr','Entscheidung, weniger Kundenprojekte gleichzeitig anzunehmen — dafür mit mehr Tiefe.'],['Sommer','Kickstart your Website als eigenständiges Produkt statt 1:1-Begleitung aufgesetzt.'],['Winter','Business OS als internes Tool gestartet, um Kopf und Kalender zu entlasten.'],],
+    changed:'Du triffst Entscheidungen heute schneller und aus einer ruhigeren Position heraus — mit klareren Grenzen dafür, was du annimmst, und einem wachsenden Vertrauen darin, Dinge auch mal liegen und reifen zu lassen, statt sie sofort zu erzwingen.',
+  },
+};
+
+function viewReview(){
+  const avail = reviewAvailability();
+  const a = avail[reviewTab];
+  return `
+  <div class="tabbar">${REVIEW_TABS.map(([k,l])=>`<button class="${reviewTab===k?'active':''}" data-rtab="${k}">${l}${!avail[k].unlocked?ICN.lock:''}</button>`).join('')}</div>
+  ${a.unlocked ? renderReviewContent(REVIEW_DATA[reviewTab]) : renderReviewLocked(reviewTab, a.date)}
+  `;
+}
+function renderReviewLocked(tab, unlockDate){
+  const now = new Date();
+  const diffDays = Math.max(1, Math.ceil((unlockDate-now)/86400000));
+  const label = REVIEW_LABEL[tab];
+  return `
+  <div class="review-hero">
+    <div class="eyebrow">Rückblick</div>
+    <h1>Noch nicht bereit</h1>
+  </div>
+  <div class="glowpanel" style="margin-top:14px;">
+    <span class="lock-icon">${ICN.lock}</span>
+    <p style="font-size:16px; margin-top:12px; max-width:52ch; line-height:1.6;">Dein ${label}-Rückblick braucht noch etwas Abstand, um ehrlich zu sein — er schaltet sich automatisch frei, sobald ${tab==='year'?'das Jahr sich dem Ende zuneigt':'der Zeitraum fast vorbei ist'}.</p>
+    <p style="margin-top:16px; font-size:13.5px; opacity:.85;">Verfügbar ab <b>${fmtDate(unlockDate)}</b> — noch ${diffDays} ${diffDays===1?'Tag':'Tage'}.</p>
+  </div>`;
+}
+function renderReviewContent(d){
+  return `
+  <div class="review-hero">
+    <div class="eyebrow">Rückblick</div>
+    <h1 class="grad-text">${d.period}</h1>
+  </div>
+  <div class="big-nums">
+    ${d.nums.map(([n,l])=>`<div class="bn-cell"><div class="num">${n}</div><div class="lbl">${l}</div></div>`).join('')}
+  </div>
+
+  <div class="rv-section">
+    <h2>Was du bewegt hast</h2>
+    <div class="rv-grid">
+      ${d.moved.map(t=>`<div class="rv-card">${t}</div>`).join('')}
+    </div>
+  </div>
+
+  <div class="rv-section">
+    <h2>Woher dein Business kam</h2>
+    <div class="glowpanel">
+      <p style="font-size:15px; line-height:1.7; max-width:60ch;">${d.whereFrom}</p>
+    </div>
+  </div>
+
+  <div class="rv-section">
+    <h2>Was du erschaffen hast</h2>
+    <div class="rv-grid">
+      ${d.created.map(t=>`<div class="rv-card">${t}</div>`).join('')}
+    </div>
+  </div>
+
+  <div class="rv-section">
+    <h2>Wichtige Entscheidungen</h2>
+    <div class="timeline">
+      ${d.decisions.map(([dt,t],i,arr)=>`<div class="tl-item"><div class="tl-date">${dt}</div><div class="tl-rail"><div class="tl-dot"></div>${i<arr.length-1?'<div class="tl-line"></div>':''}</div><div class="tl-content">${t}</div></div>`).join('')}
+    </div>
+  </div>
+
+  <div class="rv-section">
+    <h2>Wie du dich verändert hast</h2>
+    <div class="glowpanel">
+      <p style="font-size:15px; line-height:1.7; max-width:62ch;">${d.changed}</p>
+    </div>
+  </div>
+  `;
+}
+function bindReview(){
+  document.querySelectorAll('[data-rtab]').forEach(el=>el.addEventListener('click', ()=>{ reviewTab=el.dataset.rtab; render(); }));
+}
+
+/* ============================================================
+   VIEW BINDING DISPATCH
+============================================================ */
+function bindView(){
+  if(state.view==='home') bindHome();
+  if(state.view==='inbox') bindInbox();
+  if(state.view==='work') bindWork();
+  if(state.view==='content'){ if(state.activeWorkspace) bindWorkspace(state.activeWorkspace); else bindContent(); }
+  if(state.view==='brain') bindBrain();
+  if(state.view==='review') bindReview();
+}
+
+/* ============================================================
+   FLOATING AI DOCK
+============================================================ */
+const AI_PANEL_LOG = [{who:'ai', text:'Ich bin überall im Tool für dich da. Frag mich zu dem, was du gerade siehst.'}];
+function renderAiPanel(){
+  document.getElementById('aiPanelBody').innerHTML = AI_PANEL_LOG.map(m=> m.who==='ai' ? `<div class="msg ai">${m.text}</div>` : `<div class="msg user">${m.text}</div>`).join('');
+  document.getElementById('aiPanelBody').scrollTop = 9999;
+}
+document.getElementById('aiFab').addEventListener('click', ()=>{
+  const p = document.getElementById('aiPanel'); p.classList.toggle('open'); renderAiPanel();
+});
+document.getElementById('aiPanelSend').addEventListener('click', sendAiPanel);
+document.getElementById('aiPanelInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendAiPanel(); });
+function sendAiPanel(){
+  const inp = document.getElementById('aiPanelInput'); const val = inp.value.trim(); if(!val) return;
+  AI_PANEL_LOG.push({who:'user', text:val}); inp.value=''; renderAiPanel();
+  setTimeout(()=>{
+    AI_PANEL_LOG.push({who:'ai', text:`Auf ${state.aiContext} bezogen: ${aiReply(val)}`});
+    renderAiPanel();
+  }, 800);
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+render();
+</script>
